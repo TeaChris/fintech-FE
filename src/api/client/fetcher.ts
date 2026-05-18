@@ -240,7 +240,7 @@ export function createApiClient(
           // Build and return the normalized response
           return buildApiResponse<TData>(
             response,
-            requestConfig.schema,
+            requestConfig.schema as import('zod').ZodType<TData> | undefined,
             requestConfig.responseType,
             {
               requestId,
