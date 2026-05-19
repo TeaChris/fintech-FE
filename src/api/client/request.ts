@@ -11,12 +11,12 @@
  */
 
 import type {
-  ApiRequestConfig,
-  PathParams,
-  QueryParams,
-  RequestContext,
-} from '@/api/types';
-import { serializeBody } from './serialization';
+      // ApiRequestConfig,
+      PathParams,
+      QueryParams,
+      RequestContext,
+} from "@/api/types";
+import { serializeBody } from "./serialization";
 
 // ---------------------------------------------------------------------------
 // URL Building
@@ -32,20 +32,20 @@ import { serializeBody } from './serialization';
  * @param params - Path parameter values
  * @returns Interpolated URL path
  */
-export function interpolatePath(
-  path: string,
-  params?: PathParams,
-): string {
-  if (!params) return path;
+export function interpolatePath(path: string, params?: PathParams): string {
+      if (!params) return path;
 
-  let result = path;
+      let result = path;
 
-  for (const [key, value] of Object.entries(params)) {
-    const placeholder = `{${key}}`;
-    result = result.replace(placeholder, encodeURIComponent(String(value)));
-  }
+      for (const [key, value] of Object.entries(params)) {
+            const placeholder = `{${key}}`;
+            result = result.replace(
+                  placeholder,
+                  encodeURIComponent(String(value)),
+            );
+      }
 
-  return result;
+      return result;
 }
 
 /**
@@ -60,26 +60,24 @@ export function interpolatePath(
  * @param query - Query parameter object
  * @returns URLSearchParams instance
  */
-export function buildQueryString(
-  query?: QueryParams,
-): URLSearchParams {
-  const params = new URLSearchParams();
+export function buildQueryString(query?: QueryParams): URLSearchParams {
+      const params = new URLSearchParams();
 
-  if (!query) return params;
+      if (!query) return params;
 
-  for (const [key, value] of Object.entries(query)) {
-    if (value === undefined) continue;
+      for (const [key, value] of Object.entries(query)) {
+            if (value === undefined) continue;
 
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        params.append(key, String(item));
+            if (Array.isArray(value)) {
+                  for (const item of value) {
+                        params.append(key, String(item));
+                  }
+            } else {
+                  params.append(key, String(value));
+            }
       }
-    } else {
-      params.append(key, String(value));
-    }
-  }
 
-  return params;
+      return params;
 }
 
 /**
@@ -92,28 +90,30 @@ export function buildQueryString(
  * @returns Full URL string
  */
 export function buildRequestUrl(
-  baseUrl: string,
-  path: string,
-  params?: PathParams,
-  query?: QueryParams,
+      baseUrl: string,
+      path: string,
+      params?: PathParams,
+      query?: QueryParams,
 ): string {
-  const interpolatedPath = interpolatePath(path, params);
-  const queryString = buildQueryString(query);
-  const queryPart = queryString.toString();
+      const interpolatedPath = interpolatePath(path, params);
+      const queryString = buildQueryString(query);
+      const queryPart = queryString.toString();
 
-  // Ensure no double slashes between base and path
-  const separator = baseUrl.endsWith('/') || interpolatedPath.startsWith('/')
-    ? ''
-    : '/';
+      // Ensure no double slashes between base and path
+      const separator =
+            baseUrl.endsWith("/") || interpolatedPath.startsWith("/")
+                  ? ""
+                  : "/";
 
-  // Remove trailing slash from base if path starts with slash
-  const cleanBase = baseUrl.endsWith('/') && interpolatedPath.startsWith('/')
-    ? baseUrl.slice(0, -1)
-    : baseUrl;
+      // Remove trailing slash from base if path starts with slash
+      const cleanBase =
+            baseUrl.endsWith("/") && interpolatedPath.startsWith("/")
+                  ? baseUrl.slice(0, -1)
+                  : baseUrl;
 
-  const url = `${cleanBase}${separator}${interpolatedPath}`;
+      const url = `${cleanBase}${separator}${interpolatedPath}`;
 
-  return queryPart ? `${url}?${queryPart}` : url;
+      return queryPart ? `${url}?${queryPart}` : url;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,42 +128,42 @@ export function buildRequestUrl(
  * @returns Merged headers as a plain object
  */
 export function mergeHeaders(
-  ...sources: (Record<string, string> | Headers | undefined)[]
+      ...sources: (Record<string, string> | Headers | undefined)[]
 ): Record<string, string> {
-  const result: Record<string, string> = {};
+      const result: Record<string, string> = {};
 
-  for (const source of sources) {
-    if (!source) continue;
+      for (const source of sources) {
+            if (!source) continue;
 
-    if (source instanceof Headers) {
-      source.forEach((value, key) => {
-        result[key] = value;
-      });
-    } else {
-      Object.assign(result, source);
-    }
-  }
+            if (source instanceof Headers) {
+                  source.forEach((value, key) => {
+                        result[key] = value;
+                  });
+            } else {
+                  Object.assign(result, source);
+            }
+      }
 
-  return result;
+      return result;
 }
 
 /**
  * Convert a HeadersInit (plain object or Headers) to a plain object.
  */
 export function normalizeHeaders(
-  headers?: Record<string, string> | Headers,
+      headers?: Record<string, string> | Headers,
 ): Record<string, string> {
-  if (!headers) return {};
+      if (!headers) return {};
 
-  if (headers instanceof Headers) {
-    const result: Record<string, string> = {};
-    headers.forEach((value, key) => {
-      result[key] = value;
-    });
-    return result;
-  }
+      if (headers instanceof Headers) {
+            const result: Record<string, string> = {};
+            headers.forEach((value, key) => {
+                  result[key] = value;
+            });
+            return result;
+      }
 
-  return { ...headers };
+      return { ...headers };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,38 +186,48 @@ export function normalizeHeaders(
  * @returns RequestInit ready for fetch()
  */
 export function buildFetchInit(
-  context: RequestContext,
-  signal: AbortSignal,
+      context: RequestContext,
+      signal: AbortSignal,
 ): RequestInit {
-  const { config, headers } = context;
-  const { serialized, contentType } = serializeBody(config.body);
+      const { config, headers } = context;
+      const { serialized, contentType } = serializeBody(config.body);
 
-  // Build final headers
-  const finalHeaders: Record<string, string> = { ...headers };
+      // Build final headers
+      const finalHeaders: Record<string, string> = { ...headers };
 
-  // Set Content-Type if the serializer determined one
-  // Don't override if already set (e.g. for FormData, browser sets boundary)
-  if (contentType && !finalHeaders['Content-Type'] && !finalHeaders['content-type']) {
-    finalHeaders['Content-Type'] = contentType;
-  }
+      // Set Content-Type if the serializer determined one
+      // Don't override if already set (e.g. for FormData, browser sets boundary)
+      if (
+            contentType &&
+            !finalHeaders["Content-Type"] &&
+            !finalHeaders["content-type"]
+      ) {
+            finalHeaders["Content-Type"] = contentType;
+      }
 
-  // Merge per-request headers (highest priority)
-  if (config.headers) {
-    const perRequestHeaders = normalizeHeaders(config.headers as Record<string, string> | Headers);
-    Object.assign(finalHeaders, perRequestHeaders);
-  }
+      // Merge per-request headers (highest priority)
+      if (config.headers) {
+            const perRequestHeaders = normalizeHeaders(
+                  config.headers as Record<string, string> | Headers,
+            );
+            Object.assign(finalHeaders, perRequestHeaders);
+      }
 
-  const init: RequestInit = {
-    method: config.method,
-    headers: finalHeaders,
-    signal,
-    credentials: 'include' as RequestCredentials, // Always send cookies
-  };
+      const init: RequestInit = {
+            method: config.method,
+            headers: finalHeaders,
+            signal,
+            credentials: "include" as RequestCredentials, // Always send cookies
+      };
 
-  // Only attach body for methods that support it
-  if (serialized !== null && config.method !== 'GET' && config.method !== 'DELETE') {
-    init.body = serialized;
-  }
+      // Only attach body for methods that support it
+      if (
+            serialized !== null &&
+            config.method !== "GET" &&
+            config.method !== "DELETE"
+      ) {
+            init.body = serialized;
+      }
 
-  return init;
+      return init;
 }
