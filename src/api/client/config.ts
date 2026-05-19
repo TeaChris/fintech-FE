@@ -12,32 +12,32 @@
  * - All defaults are conservative (long timeouts, limited retries)
  */
 
-import type { ApiClientConfig, AuthConfig, RetryConfig } from '@/api/types';
+import type { ApiClientConfig, AuthConfig, RetryConfig } from "@/api/types";
 
 // ---------------------------------------------------------------------------
 // Runtime Detection
 // ---------------------------------------------------------------------------
 
-type RuntimeEnvironment = 'browser' | 'server' | 'edge';
+type RuntimeEnvironment = "browser" | "server" | "edge";
 
 /**
  * Detect the current runtime environment.
  * Edge runtime is identified by the NEXT_RUNTIME env var.
  */
 export function detectRuntime(): RuntimeEnvironment {
-  if (typeof window !== 'undefined') {
-    return 'browser';
-  }
+      if (typeof window !== "undefined") {
+            return "browser";
+      }
 
-  // Next.js sets this in Edge runtime contexts
-  if (
-    typeof process !== 'undefined' &&
-    process.env.NEXT_RUNTIME === 'edge'
-  ) {
-    return 'edge';
-  }
+      // Next.js sets this in Edge runtime contexts
+      if (
+            typeof process !== "undefined" &&
+            process.env.NEXT_RUNTIME === "edge"
+      ) {
+            return "edge";
+      }
 
-  return 'server';
+      return "server";
 }
 
 // ---------------------------------------------------------------------------
@@ -54,12 +54,16 @@ export function detectRuntime(): RuntimeEnvironment {
  * requests to be relative to the current origin.
  */
 export function resolveBaseUrl(runtime: RuntimeEnvironment): string {
-  if (runtime === 'browser') {
-    return process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
-  }
+      if (runtime === "browser") {
+            return process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+      }
 
-  // Server and Edge can access private env vars
-  return process.env.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+      // Server and Edge can access private env vars
+      return (
+            process.env.API_BASE_URL ??
+            process.env.NEXT_PUBLIC_API_BASE_URL ??
+            ""
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -67,21 +71,21 @@ export function resolveBaseUrl(runtime: RuntimeEnvironment): string {
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  baseDelay: 1000,
-  maxDelay: 30_000,
-  jitterFactor: 0.3,
-  retryableStatuses: [408, 429, 500, 502, 503, 504],
-  retryOnNetworkError: true,
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 30_000,
+      jitterFactor: 0.3,
+      retryOnNetworkError: true,
+      retryableStatuses: [408, 429, 500, 502, 503, 504],
 } as const;
 
 export const DEFAULT_AUTH_CONFIG: AuthConfig = {
-  refreshEndpoint: '/auth/refresh',
-  refreshMethod: 'POST',
-  csrfCookieName: 'XSRF-TOKEN',
-  csrfHeaderName: 'X-XSRF-TOKEN',
-  publicPaths: ['/auth/login', '/auth/register', '/auth/forgot-password'],
-  onAuthFailure: undefined,
+      refreshMethod: "POST",
+      csrfCookieName: "XSRF-TOKEN",
+      csrfHeaderName: "X-XSRF-TOKEN",
+      refreshEndpoint: "/auth/refresh",
+      publicPaths: ["/auth/login", "/auth/register", "/auth/forgot-password"],
+      onAuthFailure: undefined,
 } as const;
 
 export const DEFAULT_TIMEOUT_MS = 30_000;
@@ -95,30 +99,30 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
  * provided overrides with environment-aware defaults.
  */
 export function createApiClientConfig(
-  overrides: Partial<ApiClientConfig> = {},
+      overrides: Partial<ApiClientConfig> = {},
 ): ApiClientConfig {
-  const runtime = overrides.runtime ?? detectRuntime();
-  const baseUrl = overrides.baseUrl ?? resolveBaseUrl(runtime);
+      const runtime = overrides.runtime ?? detectRuntime();
+      const baseUrl = overrides.baseUrl ?? resolveBaseUrl(runtime);
 
-  return {
-    baseUrl,
-    timeout: overrides.timeout ?? DEFAULT_TIMEOUT_MS,
-    retry: {
-      ...DEFAULT_RETRY_CONFIG,
-      ...overrides.retry,
-    },
-    auth: {
-      ...DEFAULT_AUTH_CONFIG,
-      ...overrides.auth,
-    },
-    middleware: overrides.middleware ?? [],
-    logger: overrides.logger,
-    defaultHeaders: {
-      'Accept': 'application/json',
-      ...overrides.defaultHeaders,
-    },
-    runtime,
-  };
+      return {
+            baseUrl,
+            timeout: overrides.timeout ?? DEFAULT_TIMEOUT_MS,
+            retry: {
+                  ...DEFAULT_RETRY_CONFIG,
+                  ...overrides.retry,
+            },
+            auth: {
+                  ...DEFAULT_AUTH_CONFIG,
+                  ...overrides.auth,
+            },
+            middleware: overrides.middleware ?? [],
+            logger: overrides.logger,
+            defaultHeaders: {
+                  Accept: "application/json",
+                  ...overrides.defaultHeaders,
+            },
+            runtime,
+      };
 }
 
 // ---------------------------------------------------------------------------
@@ -131,18 +135,18 @@ export function createApiClientConfig(
  * Financial data should be fresh; reference data can be cached longer.
  */
 export const STALE_TIMES = {
-  /** Real-time data: balances, transaction status. 0 = always refetch. */
-  REALTIME: 0,
+      /** Real-time data: balances, transaction status. 0 = always refetch. */
+      REALTIME: 0,
 
-  /** Frequently changing: transaction lists, notifications. 30s. */
-  FREQUENT: 30_000,
+      /** Frequently changing: transaction lists, notifications. 30s. */
+      FREQUENT: 30_000,
 
-  /** Standard: account details, user profile. 2 minutes. */
-  STANDARD: 2 * 60 * 1_000,
+      /** Standard: account details, user profile. 2 minutes. */
+      STANDARD: 2 * 60 * 1_000,
 
-  /** Reference data: currencies, bank lists, card types. 10 minutes. */
-  REFERENCE: 10 * 60 * 1_000,
+      /** Reference data: currencies, bank lists, card types. 10 minutes. */
+      REFERENCE: 10 * 60 * 1_000,
 
-  /** Static data: feature flags, app config. 30 minutes. */
-  STATIC: 30 * 60 * 1_000,
+      /** Static data: feature flags, app config. 30 minutes. */
+      STATIC: 30 * 60 * 1_000,
 } as const;
