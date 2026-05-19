@@ -21,36 +21,36 @@
  */
 
 import type {
-  ApiClient,
-  ApiClientConfig,
-  ApiRequestConfig,
-  ApiResponse,
-  RequestContext,
-} from '@/api/types';
+      ApiClient,
+      ApiClientConfig,
+      ApiRequestConfig,
+      ApiResponse,
+      RequestContext,
+} from '@/api/types'
 
-import { createApiClientConfig } from './config';
+import { createApiClientConfig } from './config'
 import {
-  mapResponseToError,
-  NetworkError,
-  isAuthError,
-} from './errors';
-import { noopLogger } from './logging';
+      mapResponseToError,
+      NetworkError,
+      // isAuthError,
+} from './errors'
+import { noopLogger } from './logging'
 import {
-  generateRequestId,
-  generateCorrelationId,
-  getTimestamp,
-  calculateDuration,
-} from './tracing';
-import { createTimeoutController } from './timeout';
-import { executeWithRetry } from './retry';
+      generateRequestId,
+      generateCorrelationId,
+      getTimestamp,
+      calculateDuration,
+} from './tracing'
+import { createTimeoutController } from './timeout'
+import { executeWithRetry } from './retry'
 import {
-  createAuthCoordinator,
-  createRefreshFn,
-  shouldAttemptRefresh,
-} from './auth';
-import { composeMiddleware, buildMiddlewarePipeline } from './middleware';
-import { buildRequestUrl, buildFetchInit } from './request';
-import { buildApiResponse } from './response';
+      createAuthCoordinator,
+      createRefreshFn,
+      shouldAttemptRefresh,
+} from './auth'
+import { composeMiddleware, buildMiddlewarePipeline } from './middleware'
+import { buildRequestUrl, buildFetchInit } from './request'
+import { buildApiResponse } from './response'
 
 // ---------------------------------------------------------------------------
 // Request Deduplication
@@ -61,10 +61,10 @@ import { buildApiResponse } from './response';
  * If the same GET URL is requested multiple times simultaneously,
  * only one actual fetch is made and all callers share the result.
  */
-type InflightCache = Map<string, Promise<Response>>;
+type InflightCache = Map<string, Promise<Response>>
 
 function createInflightCache(): InflightCache {
-  return new Map();
+      return new Map()
 }
 
 /**
@@ -72,7 +72,7 @@ function createInflightCache(): InflightCache {
  * Based on method + URL (query params included).
  */
 function dedupeKey(method: string, url: string): string {
-  return `${method}:${url}`;
+      return `${method}:${url}`
 }
 
 // ---------------------------------------------------------------------------
@@ -103,299 +103,360 @@ function dedupeKey(method: string, url: string): string {
  * ```
  */
 export function createApiClient(
-  overrides: Partial<ApiClientConfig> = {},
+      overrides: Partial<ApiClientConfig> = {},
 ): ApiClient {
-  // Build configuration
-  const config = createApiClientConfig(overrides);
-  const logger = config.logger ?? noopLogger;
+      // Build configuration
+      const config = createApiClientConfig(overrides)
+      const logger = config.logger ?? noopLogger
 
-  // Create auth coordinator
-  const refreshFn = createRefreshFn(config.baseUrl, config.auth);
-  const authCoordinator = createAuthCoordinator(config.auth, refreshFn);
+      // Create auth coordinator
+      const refreshFn = createRefreshFn(config.baseUrl, config.auth)
+      const authCoordinator = createAuthCoordinator(config.auth, refreshFn)
 
-  // Build middleware pipeline
-  const middlewares = buildMiddlewarePipeline(config, authCoordinator);
+      // Build middleware pipeline
+      const middlewares = buildMiddlewarePipeline(config, authCoordinator)
 
-  // Deduplication cache for in-flight GET requests
-  const inflightCache = createInflightCache();
+      // Deduplication cache for in-flight GET requests
+      const inflightCache = createInflightCache()
 
-  // -------------------------------------------------------------------------
-  // Core Request Executor
-  // -------------------------------------------------------------------------
+      // -------------------------------------------------------------------------
+      // Core Request Executor
+      // -------------------------------------------------------------------------
 
-  /**
-   * Execute a single API request through the full pipeline.
-   *
-   * Pipeline order:
-   * 1. Build request context (IDs, timestamps)
-   * 2. Run middleware pipeline (tracing, auth, CSRF, idempotency, logging)
-   * 3. Build fetch URL and RequestInit
-   * 4. Create timeout controller
-   * 5. Execute fetch (with deduplication for GETs)
-   * 6. Handle non-2xx responses (error mapping, auth refresh)
-   * 7. Parse response body (JSON, Blob, Stream, text)
-   * 8. Validate with Zod (if schema provided)
-   * 9. Return normalized ApiResponse
-   */
-  async function executeRequest<TData>(
-    requestConfig: ApiRequestConfig,
-  ): Promise<ApiResponse<TData>> {
-    const correlationId = generateCorrelationId();
-    const startTime = getTimestamp();
+      /**
+       * Execute a single API request through the full pipeline.
+       *
+       * Pipeline order:
+       * 1. Build request context (IDs, timestamps)
+       * 2. Run middleware pipeline (tracing, auth, CSRF, idempotency, logging)
+       * 3. Build fetch URL and RequestInit
+       * 4. Create timeout controller
+       * 5. Execute fetch (with deduplication for GETs)
+       * 6. Handle non-2xx responses (error mapping, auth refresh)
+       * 7. Parse response body (JSON, Blob, Stream, text)
+       * 8. Validate with Zod (if schema provided)
+       * 9. Return normalized ApiResponse
+       */
+      async function executeRequest<TData>(
+            requestConfig: ApiRequestConfig,
+      ): Promise<ApiResponse<TData>> {
+            const correlationId = generateCorrelationId()
+            const startTime = getTimestamp()
 
-    // Wrap in retry engine
-    return executeWithRetry(
-      async (attempt) => {
-        const requestId = generateRequestId();
+            // Wrap in retry engine
+            return executeWithRetry(
+                  async (attempt) => {
+                        const requestId = generateRequestId()
 
-        // Build request context
-        const context: RequestContext = {
-          requestId,
-          correlationId,
-          startTime,
-          attempt,
-          config: requestConfig,
-          headers: {},
-          metadata: {},
-        };
+                        // Build request context
+                        const context: RequestContext = {
+                              requestId,
+                              correlationId,
+                              startTime,
+                              attempt,
+                              config: requestConfig,
+                              headers: {},
+                              metadata: {},
+                        }
 
-        // Build the full URL
-        const url = buildRequestUrl(
-          config.baseUrl,
-          requestConfig.path,
-          requestConfig.params,
-          requestConfig.query,
-        );
+                        // Build the full URL
+                        const url = buildRequestUrl(
+                              config.baseUrl,
+                              requestConfig.path,
+                              requestConfig.params,
+                              requestConfig.query,
+                        )
 
-        // Create timeout controller
-        const timeout = createTimeoutController(
-          requestConfig.timeout ?? config.timeout,
-          requestConfig.signal,
-        );
+                        // Create timeout controller
+                        const timeout = createTimeoutController(
+                              requestConfig.timeout ?? config.timeout,
+                              requestConfig.signal,
+                        )
 
-        try {
-          // Build the middleware pipeline with the fetch as the terminal handler
-          const pipeline = composeMiddleware(
-            middlewares,
-            async (ctx: RequestContext) => {
-              // Build the final RequestInit
-              const init = buildFetchInit(ctx, timeout.signal);
+                        try {
+                              // Build the middleware pipeline with the fetch as the terminal handler
+                              const pipeline = composeMiddleware(
+                                    middlewares,
+                                    async (ctx: RequestContext) => {
+                                          // Build the final RequestInit
+                                          const init = buildFetchInit(
+                                                ctx,
+                                                timeout.signal,
+                                          )
 
-              // Deduplication for GET requests
-              if (requestConfig.method === 'GET') {
-                const key = dedupeKey('GET', url);
-                const inflight = inflightCache.get(key);
+                                          // Deduplication for GET requests
+                                          if (requestConfig.method === 'GET') {
+                                                const key = dedupeKey(
+                                                      'GET',
+                                                      url,
+                                                )
+                                                const inflight =
+                                                      inflightCache.get(key)
 
-                if (inflight) {
-                  // Clone the response so each caller gets their own body
-                  return (await inflight).clone();
-                }
+                                                if (inflight) {
+                                                      // Clone the response so each caller gets their own body
+                                                      return (
+                                                            await inflight
+                                                      ).clone()
+                                                }
 
-                const fetchPromise = fetch(url, init).finally(() => {
-                  inflightCache.delete(key);
-                });
+                                                const fetchPromise = fetch(
+                                                      url,
+                                                      init,
+                                                ).finally(() => {
+                                                      inflightCache.delete(key)
+                                                })
 
-                inflightCache.set(key, fetchPromise);
-                return fetchPromise;
-              }
+                                                inflightCache.set(
+                                                      key,
+                                                      fetchPromise,
+                                                )
+                                                return fetchPromise
+                                          }
 
-              return fetch(url, init);
+                                          return fetch(url, init)
+                                    },
+                              )
+
+                              // Execute the pipeline
+                              const response = await pipeline(context)
+
+                              // Clear timeout on successful response
+                              timeout.clear()
+
+                              // Calculate duration
+                              const durationMs = calculateDuration(startTime)
+
+                              // Handle non-2xx responses
+                              if (!response.ok) {
+                                    const errorContext = {
+                                          requestId,
+                                          correlationId,
+                                          method: requestConfig.method,
+                                          url,
+                                          retryCount: attempt,
+                                          durationMs,
+                                    }
+
+                                    // Check for 401 and attempt auth refresh
+                                    if (
+                                          response.status === 401 &&
+                                          shouldAttemptRefresh(
+                                                requestConfig.path,
+                                                config.auth,
+                                          )
+                                    ) {
+                                          const refreshed =
+                                                await authCoordinator.handleUnauthorized()
+                                          if (refreshed) {
+                                                // Auth refreshed — retry will be handled by the retry engine
+                                                // Throw an auth error so the retry loop picks it up
+                                                throw await mapResponseToError(
+                                                      response.clone(),
+                                                      errorContext,
+                                                )
+                                          }
+                                    }
+
+                                    // Map to domain error and throw
+                                    throw await mapResponseToError(
+                                          response,
+                                          errorContext,
+                                    )
+                              }
+
+                              // Build and return the normalized response
+                              return buildApiResponse<TData>(
+                                    response,
+                                    requestConfig.schema as
+                                          | import('zod').ZodType<TData>
+                                          | undefined,
+                                    requestConfig.responseType,
+                                    {
+                                          requestId,
+                                          correlationId,
+                                          startTime,
+                                          attempt,
+                                          url,
+                                          method: requestConfig.method,
+                                          durationMs,
+                                    },
+                              )
+                        } catch (error) {
+                              timeout.clear()
+
+                              // Wrap raw fetch errors as NetworkError
+                              if (
+                                    error instanceof TypeError &&
+                                    (error.message.includes('fetch') ||
+                                          error.message.includes('network') ||
+                                          error.message.includes('Failed'))
+                              ) {
+                                    throw new NetworkError(
+                                          `Network error: ${error.message}`,
+                                          {
+                                                requestId: context.requestId,
+                                                correlationId:
+                                                      context.correlationId,
+                                                method: requestConfig.method,
+                                                url,
+                                                retryCount: attempt,
+                                                durationMs:
+                                                      calculateDuration(
+                                                            startTime,
+                                                      ),
+                                          },
+                                    )
+                              }
+
+                              throw error
+                        }
+                  },
+                  requestConfig.retry ?? config.retry,
+                  {
+                        method: requestConfig.method,
+                        signal: requestConfig.signal,
+                        isFinancialMutation: requestConfig.isFinancialMutation,
+                        onRetry: (attempt, error, delayMs) => {
+                              logger.warn({
+                                    level: 'warn',
+                                    message: `Retrying request (attempt ${attempt})`,
+                                    timestamp: new Date().toISOString(),
+                                    requestId: correlationId,
+                                    correlationId,
+                                    method: requestConfig.method,
+                                    url: requestConfig.path,
+                                    error:
+                                          error instanceof Error
+                                                ? error.message
+                                                : 'Unknown',
+                                    retryCount: attempt,
+                                    durationMs: delayMs,
+                              })
+                        },
+                  },
+            )
+      }
+
+      // -------------------------------------------------------------------------
+      // Public API
+      // -------------------------------------------------------------------------
+
+      return {
+            get<TData>(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig,
+                        'method' | 'path' | 'body'
+                  >,
+            ): Promise<ApiResponse<TData>> {
+                  return executeRequest<TData>({
+                        ...requestConfig,
+                        method: 'GET',
+                        path,
+                  })
             },
-          );
 
-          // Execute the pipeline
-          const response = await pipeline(context);
-
-          // Clear timeout on successful response
-          timeout.clear();
-
-          // Calculate duration
-          const durationMs = calculateDuration(startTime);
-
-          // Handle non-2xx responses
-          if (!response.ok) {
-            const errorContext = {
-              requestId,
-              correlationId,
-              method: requestConfig.method,
-              url,
-              retryCount: attempt,
-              durationMs,
-            };
-
-            // Check for 401 and attempt auth refresh
-            if (response.status === 401 && shouldAttemptRefresh(requestConfig.path, config.auth)) {
-              const refreshed = await authCoordinator.handleUnauthorized();
-              if (refreshed) {
-                // Auth refreshed — retry will be handled by the retry engine
-                // Throw an auth error so the retry loop picks it up
-                throw await mapResponseToError(response.clone(), errorContext);
-              }
-            }
-
-            // Map to domain error and throw
-            throw await mapResponseToError(response, errorContext);
-          }
-
-          // Build and return the normalized response
-          return buildApiResponse<TData>(
-            response,
-            requestConfig.schema as import('zod').ZodType<TData> | undefined,
-            requestConfig.responseType,
-            {
-              requestId,
-              correlationId,
-              startTime,
-              attempt,
-              url,
-              method: requestConfig.method,
-              durationMs,
+            post<TData, TBody = unknown>(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig<TBody>,
+                        'method' | 'path'
+                  >,
+            ): Promise<ApiResponse<TData>> {
+                  return executeRequest<TData>({
+                        ...requestConfig,
+                        method: 'POST',
+                        path,
+                  })
             },
-          );
-        } catch (error) {
-          timeout.clear();
 
-          // Wrap raw fetch errors as NetworkError
-          if (
-            error instanceof TypeError &&
-            (error.message.includes('fetch') ||
-              error.message.includes('network') ||
-              error.message.includes('Failed'))
-          ) {
-            throw new NetworkError(
-              `Network error: ${error.message}`,
-              {
-                requestId: context.requestId,
-                correlationId: context.correlationId,
-                method: requestConfig.method,
-                url,
-                retryCount: attempt,
-                durationMs: calculateDuration(startTime),
-              },
-            );
-          }
+            put<TData, TBody = unknown>(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig<TBody>,
+                        'method' | 'path'
+                  >,
+            ): Promise<ApiResponse<TData>> {
+                  return executeRequest<TData>({
+                        ...requestConfig,
+                        method: 'PUT',
+                        path,
+                  })
+            },
 
-          throw error;
-        }
-      },
-      requestConfig.retry ?? config.retry,
-      {
-        method: requestConfig.method,
-        signal: requestConfig.signal,
-        isFinancialMutation: requestConfig.isFinancialMutation,
-        onRetry: (attempt, error, delayMs) => {
-          logger.warn({
-            level: 'warn',
-            message: `Retrying request (attempt ${attempt})`,
-            timestamp: new Date().toISOString(),
-            requestId: correlationId,
-            correlationId,
-            method: requestConfig.method,
-            url: requestConfig.path,
-            error: error instanceof Error ? error.message : 'Unknown',
-            retryCount: attempt,
-            durationMs: delayMs,
-          });
-        },
-      },
-    );
-  }
+            patch<TData, TBody = unknown>(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig<TBody>,
+                        'method' | 'path'
+                  >,
+            ): Promise<ApiResponse<TData>> {
+                  return executeRequest<TData>({
+                        ...requestConfig,
+                        method: 'PATCH',
+                        path,
+                  })
+            },
 
-  // -------------------------------------------------------------------------
-  // Public API
-  // -------------------------------------------------------------------------
+            del<TData>(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig,
+                        'method' | 'path' | 'body'
+                  >,
+            ): Promise<ApiResponse<TData>> {
+                  return executeRequest<TData>({
+                        ...requestConfig,
+                        method: 'DELETE',
+                        path,
+                  })
+            },
 
-  return {
-    get<TData>(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig, 'method' | 'path' | 'body'>,
-    ): Promise<ApiResponse<TData>> {
-      return executeRequest<TData>({
-        ...requestConfig,
-        method: 'GET',
-        path,
-      });
-    },
+            upload<TData>(
+                  path: string,
+                  formData: FormData,
+                  requestConfig?: Omit<
+                        ApiRequestConfig,
+                        'method' | 'path' | 'body'
+                  >,
+            ): Promise<ApiResponse<TData>> {
+                  return executeRequest<TData>({
+                        ...requestConfig,
+                        method: 'POST',
+                        path,
+                        body: formData,
+                  })
+            },
 
-    post<TData, TBody = unknown>(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig<TBody>, 'method' | 'path'>,
-    ): Promise<ApiResponse<TData>> {
-      return executeRequest<TData>({
-        ...requestConfig,
-        method: 'POST',
-        path,
-      });
-    },
+            download(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig,
+                        'method' | 'path' | 'body' | 'responseType'
+                  >,
+            ): Promise<ApiResponse<Blob>> {
+                  return executeRequest<Blob>({
+                        ...requestConfig,
+                        method: 'GET',
+                        path,
+                        responseType: 'blob',
+                  })
+            },
 
-    put<TData, TBody = unknown>(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig<TBody>, 'method' | 'path'>,
-    ): Promise<ApiResponse<TData>> {
-      return executeRequest<TData>({
-        ...requestConfig,
-        method: 'PUT',
-        path,
-      });
-    },
-
-    patch<TData, TBody = unknown>(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig<TBody>, 'method' | 'path'>,
-    ): Promise<ApiResponse<TData>> {
-      return executeRequest<TData>({
-        ...requestConfig,
-        method: 'PATCH',
-        path,
-      });
-    },
-
-    del<TData>(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig, 'method' | 'path' | 'body'>,
-    ): Promise<ApiResponse<TData>> {
-      return executeRequest<TData>({
-        ...requestConfig,
-        method: 'DELETE',
-        path,
-      });
-    },
-
-    upload<TData>(
-      path: string,
-      formData: FormData,
-      requestConfig?: Omit<ApiRequestConfig, 'method' | 'path' | 'body'>,
-    ): Promise<ApiResponse<TData>> {
-      return executeRequest<TData>({
-        ...requestConfig,
-        method: 'POST',
-        path,
-        body: formData,
-      });
-    },
-
-    download(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig, 'method' | 'path' | 'body' | 'responseType'>,
-    ): Promise<ApiResponse<Blob>> {
-      return executeRequest<Blob>({
-        ...requestConfig,
-        method: 'GET',
-        path,
-        responseType: 'blob',
-      });
-    },
-
-    stream(
-      path: string,
-      requestConfig?: Omit<ApiRequestConfig, 'method' | 'path' | 'body' | 'responseType'>,
-    ): Promise<ApiResponse<ReadableStream<Uint8Array>>> {
-      return executeRequest<ReadableStream<Uint8Array>>({
-        ...requestConfig,
-        method: 'GET',
-        path,
-        responseType: 'stream',
-      });
-    },
-  };
+            stream(
+                  path: string,
+                  requestConfig?: Omit<
+                        ApiRequestConfig,
+                        'method' | 'path' | 'body' | 'responseType'
+                  >,
+            ): Promise<ApiResponse<ReadableStream<Uint8Array>>> {
+                  return executeRequest<ReadableStream<Uint8Array>>({
+                        ...requestConfig,
+                        method: 'GET',
+                        path,
+                        responseType: 'stream',
+                  })
+            },
+      }
 }
