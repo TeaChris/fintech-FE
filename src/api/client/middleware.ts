@@ -11,17 +11,17 @@
  */
 
 import type {
-  Middleware,
-  RequestContext,
-  ApiClientConfig,
-  HttpMethod,
-} from '@/api/types';
+      Middleware,
+      RequestContext,
+      ApiClientConfig,
+      // HttpMethod,
+} from "@/api/types";
 
-import { buildTracingHeaders } from './tracing';
-import { buildIdempotencyHeader, resolveIdempotencyKey } from './idempotency';
-import { redactHeaders } from './logging';
-import type { AuthCoordinator } from './auth';
-import type { Logger } from '@/api/types';
+import type { Logger } from "@/api/types";
+import { redactHeaders } from "./logging";
+import type { AuthCoordinator } from "./auth";
+import { buildTracingHeaders } from "./tracing";
+import { buildIdempotencyHeader, resolveIdempotencyKey } from "./idempotency";
 
 // ---------------------------------------------------------------------------
 // Middleware Composition
@@ -40,21 +40,21 @@ import type { Logger } from '@/api/types';
  * @returns A single function that runs the entire pipeline
  */
 export function composeMiddleware(
-  middlewares: readonly Middleware[],
-  finalHandler: (context: RequestContext) => Promise<Response>,
+      middlewares: readonly Middleware[],
+      finalHandler: (context: RequestContext) => Promise<Response>,
 ): (context: RequestContext) => Promise<Response> {
-  // Build the chain from right to left
-  let handler = finalHandler;
+      // Build the chain from right to left
+      let handler = finalHandler;
 
-  for (let i = middlewares.length - 1; i >= 0; i--) {
-    const middleware = middlewares[i];
-    const nextHandler = handler;
+      for (let i = middlewares.length - 1; i >= 0; i--) {
+            const middleware = middlewares[i];
+            const nextHandler = handler;
 
-    handler = (context: RequestContext) =>
-      middleware(context, () => nextHandler(context));
-  }
+            handler = (context: RequestContext) =>
+                  middleware(context, () => nextHandler(context));
+      }
 
-  return handler;
+      return handler;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,21 +65,19 @@ export function composeMiddleware(
  * Tracing middleware — injects X-Request-ID and X-Correlation-ID headers.
  * Runs first to ensure all subsequent middleware have tracing context.
  */
-export function createTracingMiddleware(
-  clientVersion?: string,
-): Middleware {
-  return async (context, next) => {
-    const tracingHeaders = buildTracingHeaders({
-      requestId: context.requestId,
-      correlationId: context.correlationId,
-      clientVersion,
-    });
+export function createTracingMiddleware(clientVersion?: string): Middleware {
+      return async (context, next) => {
+            const tracingHeaders = buildTracingHeaders({
+                  requestId: context.requestId,
+                  correlationId: context.correlationId,
+                  clientVersion,
+            });
 
-    // Merge tracing headers into context
-    Object.assign(context.headers, tracingHeaders);
+            // Merge tracing headers into context
+            Object.assign(context.headers, tracingHeaders);
 
-    return next();
-  };
+            return next();
+      };
 }
 
 /**
@@ -87,24 +85,22 @@ export function createTracingMiddleware(
  * Skips auth for public paths and when skipAuth is set.
  */
 export function createAuthMiddleware(
-  authCoordinator: AuthCoordinator,
+      authCoordinator: AuthCoordinator,
 ): Middleware {
-  return async (context, next) => {
-    const { config } = context;
+      return async (context, next) => {
+            const { config } = context;
 
-    // Skip auth for public paths or explicit opt-out
-    if (config.skipAuth || authCoordinator.isPublicPath(config.path)) {
-      return next();
-    }
+            // Skip auth for public paths or explicit opt-out
+            if (config.skipAuth || authCoordinator.isPublicPath(config.path)) {
+                  return next();
+            }
 
-    // Build auth-related headers (CSRF token, etc.)
-    const authHeaders = authCoordinator.buildAuthHeaders(
-      config.method,
-    );
-    Object.assign(context.headers, authHeaders);
+            // Build auth-related headers (CSRF token, etc.)
+            const authHeaders = authCoordinator.buildAuthHeaders(config.method);
+            Object.assign(context.headers, authHeaders);
 
-    return next();
-  };
+            return next();
+      };
 }
 
 /**
@@ -112,22 +108,22 @@ export function createAuthMiddleware(
  * for state-changing requests (POST, PUT, PATCH).
  */
 export function createIdempotencyMiddleware(): Middleware {
-  return async (context, next) => {
-    const key = resolveIdempotencyKey(
-      context.config.method,
-      context.config.idempotencyKey,
-    );
+      return async (context, next) => {
+            const key = resolveIdempotencyKey(
+                  context.config.method,
+                  context.config.idempotencyKey,
+            );
 
-    if (key) {
-      const header = buildIdempotencyHeader(key);
-      Object.assign(context.headers, header);
+            if (key) {
+                  const header = buildIdempotencyHeader(key);
+                  Object.assign(context.headers, header);
 
-      // Store the key in metadata for retry reuse
-      context.metadata['idempotencyKey'] = key;
-    }
+                  // Store the key in metadata for retry reuse
+                  context.metadata["idempotencyKey"] = key;
+            }
 
-    return next();
-  };
+            return next();
+      };
 }
 
 /**
@@ -135,13 +131,13 @@ export function createIdempotencyMiddleware(): Middleware {
  * Runs early so subsequent middleware can override.
  */
 export function createDefaultHeadersMiddleware(
-  defaultHeaders: Record<string, string>,
+      defaultHeaders: Record<string, string>,
 ): Middleware {
-  return async (context, next) => {
-    // Default headers are applied first, allowing per-request overrides
-    context.headers = { ...defaultHeaders, ...context.headers };
-    return next();
-  };
+      return async (context, next) => {
+            // Default headers are applied first, allowing per-request overrides
+            context.headers = { ...defaultHeaders, ...context.headers };
+            return next();
+      };
 }
 
 /**
@@ -149,53 +145,56 @@ export function createDefaultHeadersMiddleware(
  * Uses structured logging with automatic sensitive data redaction.
  */
 export function createLoggingMiddleware(logger: Logger): Middleware {
-  return async (context, next) => {
-    const { requestId, correlationId, config } = context;
+      return async (context, next) => {
+            const { requestId, correlationId, config } = context;
 
-    // Log request start
-    logger.info({
-      level: 'info',
-      message: `API Request: ${config.method} ${config.path}`,
-      timestamp: new Date().toISOString(),
-      requestId,
-      correlationId,
-      method: config.method,
-      url: config.path,
-    });
+            // Log request start
+            logger.info({
+                  level: "info",
+                  message: `API Request: ${config.method} ${config.path}`,
+                  timestamp: new Date().toISOString(),
+                  requestId,
+                  correlationId,
+                  method: config.method,
+                  url: config.path,
+            });
 
-    try {
-      const response = await next();
+            try {
+                  const response = await next();
 
-      // Log successful response
-      logger.info({
-        level: 'info',
-        message: `API Response: ${response.status} ${config.method} ${config.path}`,
-        timestamp: new Date().toISOString(),
-        requestId,
-        correlationId,
-        method: config.method,
-        url: config.path,
-        status: response.status,
-        headers: redactHeaders(response.headers),
-      });
+                  // Log successful response
+                  logger.info({
+                        level: "info",
+                        message: `API Response: ${response.status} ${config.method} ${config.path}`,
+                        timestamp: new Date().toISOString(),
+                        requestId,
+                        correlationId,
+                        method: config.method,
+                        url: config.path,
+                        status: response.status,
+                        headers: redactHeaders(response.headers),
+                  });
 
-      return response;
-    } catch (error) {
-      // Log error
-      logger.error({
-        level: 'error',
-        message: `API Error: ${config.method} ${config.path}`,
-        timestamp: new Date().toISOString(),
-        requestId,
-        correlationId,
-        method: config.method,
-        url: config.path,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+                  return response;
+            } catch (error) {
+                  // Log error
+                  logger.error({
+                        level: "error",
+                        message: `API Error: ${config.method} ${config.path}`,
+                        timestamp: new Date().toISOString(),
+                        requestId,
+                        correlationId,
+                        method: config.method,
+                        url: config.path,
+                        error:
+                              error instanceof Error
+                                    ? error.message
+                                    : "Unknown error",
+                  });
 
-      throw error;
-    }
-  };
+                  throw error;
+            }
+      };
 }
 
 // ---------------------------------------------------------------------------
@@ -218,34 +217,36 @@ export function createLoggingMiddleware(logger: Logger): Middleware {
  * @returns Ordered array of middleware
  */
 export function buildMiddlewarePipeline(
-  clientConfig: ApiClientConfig,
-  authCoordinator: AuthCoordinator,
+      clientConfig: ApiClientConfig,
+      authCoordinator: AuthCoordinator,
 ): Middleware[] {
-  const pipeline: Middleware[] = [];
+      const pipeline: Middleware[] = [];
 
-  // 1. Logging (outermost — wraps everything)
-  if (clientConfig.logger) {
-    pipeline.push(createLoggingMiddleware(clientConfig.logger));
-  }
+      // 1. Logging (outermost — wraps everything)
+      if (clientConfig.logger) {
+            pipeline.push(createLoggingMiddleware(clientConfig.logger));
+      }
 
-  // 2. Default headers
-  if (clientConfig.defaultHeaders) {
-    pipeline.push(createDefaultHeadersMiddleware(clientConfig.defaultHeaders));
-  }
+      // 2. Default headers
+      if (clientConfig.defaultHeaders) {
+            pipeline.push(
+                  createDefaultHeadersMiddleware(clientConfig.defaultHeaders),
+            );
+      }
 
-  // 3. Tracing
-  pipeline.push(createTracingMiddleware());
+      // 3. Tracing
+      pipeline.push(createTracingMiddleware());
 
-  // 4. Auth
-  pipeline.push(createAuthMiddleware(authCoordinator));
+      // 4. Auth
+      pipeline.push(createAuthMiddleware(authCoordinator));
 
-  // 5. Idempotency
-  pipeline.push(createIdempotencyMiddleware());
+      // 5. Idempotency
+      pipeline.push(createIdempotencyMiddleware());
 
-  // 6. User-provided middleware
-  if (clientConfig.middleware) {
-    pipeline.push(...clientConfig.middleware);
-  }
+      // 6. User-provided middleware
+      if (clientConfig.middleware) {
+            pipeline.push(...clientConfig.middleware);
+      }
 
-  return pipeline;
+      return pipeline;
 }
