@@ -8,15 +8,16 @@
  * - Return typed results to the client
  */
 
-'use server';
+"use server";
 
-import { revalidatePath, revalidateTag } from 'next/cache';
-import { createServerClient } from './server-fetcher';
-import { TransferSchema, TransferRequestSchema } from '@/api/schemas';
-import type { Transfer, TransferRequest } from '@/api/schemas';
-import { validatePayload } from '@/api/client/validation';
-import { isApiError, isValidationError } from '@/api/client/errors';
-import type { ZodType } from 'zod';
+import type { ZodType } from "zod";
+import { revalidatePath } from "next/cache";
+
+import { createServerClient } from "./server-fetcher";
+import { validatePayload } from "@/api/client/validation";
+import type { Transfer, TransferRequest } from "@/api/schemas";
+import { isApiError, isValidationError } from "@/api/client/errors";
+import { TransferSchema, TransferRequestSchema } from "@/api/schemas";
 
 // ---------------------------------------------------------------------------
 // Transfer Server Action
@@ -26,8 +27,12 @@ import type { ZodType } from 'zod';
  * Server Action result — discriminated union for client consumption.
  */
 export type ActionResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+      | { success: true; data: T }
+      | {
+              success: false;
+              error: string;
+              fieldErrors?: Record<string, string[]>;
+        };
 
 /**
  * Create a new transfer via Server Action.
@@ -66,48 +71,51 @@ export type ActionResult<T> =
  * ```
  */
 export async function createTransferAction(
-  payload: TransferRequest,
+      payload: TransferRequest,
 ): Promise<ActionResult<Transfer>> {
-  try {
-    // 1. Validate the payload on the server
-    const validatedPayload = validatePayload(TransferRequestSchema, payload);
+      try {
+            // 1. Validate the payload on the server
+            const validatedPayload = validatePayload(
+                  TransferRequestSchema,
+                  payload,
+            );
 
-    // 2. Create a server client with cookie forwarding
-    const client = await createServerClient();
+            // 2. Create a server client with cookie forwarding
+            const client = await createServerClient();
 
-    // 3. Call the API with financial mutation safety
-    const response = await client.post<Transfer>('/transfers', {
-      body: validatedPayload,
-      schema: TransferSchema as unknown as ZodType,
-      isFinancialMutation: true,
-    });
+            // 3. Call the API with financial mutation safety
+            const response = await client.post<Transfer>("/transfers", {
+                  body: validatedPayload,
+                  schema: TransferSchema as unknown as ZodType,
+                  isFinancialMutation: true,
+            });
 
-    // 4. Revalidate affected caches
-    revalidatePath('/accounts');
-    revalidatePath('/transfers');
+            // 4. Revalidate affected caches
+            revalidatePath("/accounts");
+            revalidatePath("/transfers");
 
-    // 5. Return success
-    return { success: true, data: response.data };
-  } catch (error) {
-    // Map errors to user-friendly messages
-    if (isValidationError(error)) {
-      return {
-        success: false,
-        error: error.message,
-        fieldErrors: error.fieldErrors,
-      };
-    }
+            // 5. Return success
+            return { success: true, data: response.data };
+      } catch (error) {
+            // Map errors to user-friendly messages
+            if (isValidationError(error)) {
+                  return {
+                        success: false,
+                        error: error.message,
+                        fieldErrors: error.fieldErrors,
+                  };
+            }
 
-    if (isApiError(error)) {
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
+            if (isApiError(error)) {
+                  return {
+                        success: false,
+                        error: error.message,
+                  };
+            }
 
-    return {
-      success: false,
-      error: 'An unexpected error occurred. Please try again.',
-    };
-  }
+            return {
+                  success: false,
+                  error: "An unexpected error occurred. Please try again.",
+            };
+      }
 }
