@@ -9,7 +9,7 @@
  * - Hook points for Sentry, DataDog, OpenTelemetry
  */
 
-import type { LogEntry, LogLevel, Logger } from '@/api/types';
+import type { LogEntry, LogLevel, Logger } from "@/api/types";
 
 // ---------------------------------------------------------------------------
 // Sensitive Field Redaction
@@ -20,88 +20,99 @@ import type { LogEntry, LogLevel, Logger } from '@/api/types';
  * Case-insensitive matching against object keys.
  */
 const SENSITIVE_FIELDS = new Set([
-  'authorization',
-  'cookie',
-  'set-cookie',
-  'token',
-  'access_token',
-  'refresh_token',
-  'password',
-  'secret',
-  'ssn',
-  'social_security',
-  'cardnumber',
-  'card_number',
-  'cvv',
-  'cvc',
-  'pin',
-  'account_number',
-  'routing_number',
-  'bvn',
-  'x-api-key',
-  'api_key',
-  'apikey',
+      "pin",
+      "bvn",
+      "cvv",
+      "cvc",
+      "ssn",
+      "token",
+      "secret",
+      "cookie",
+      "apikey",
+      "api_key",
+      "x-api-key",
+      "password",
+      "set-cookie",
+      "cardnumber",
+      "card_number",
+      "access_token",
+      "refresh_token",
+      "authorization",
+      "account_number",
+      "routing_number",
+      "social_security",
 ]);
 
-const REDACTED = '[REDACTED]';
+const REDACTED = "[REDACTED]";
 
 /**
  * Recursively redact sensitive fields from an object.
  * Returns a new object — does not mutate the input.
  */
 export function redactSensitiveFields(
-  obj: Record<string, unknown>,
-  maxDepth: number = 5,
+      obj: Record<string, unknown>,
+      maxDepth: number = 5,
 ): Record<string, unknown> {
-  if (maxDepth <= 0) {
-    return { '[truncated]': 'max depth reached' };
-  }
+      if (maxDepth <= 0) {
+            return { "[truncated]": "max depth reached" };
+      }
 
-  const result: Record<string, unknown> = {};
+      const result: Record<string, unknown> = {};
 
-  for (const [key, value] of Object.entries(obj)) {
-    const lowerKey = key.toLowerCase();
+      for (const [key, value] of Object.entries(obj)) {
+            const lowerKey = key.toLowerCase();
 
-    if (SENSITIVE_FIELDS.has(lowerKey)) {
-      result[key] = REDACTED;
-      continue;
-    }
+            if (SENSITIVE_FIELDS.has(lowerKey)) {
+                  result[key] = REDACTED;
+                  continue;
+            }
 
-    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      result[key] = redactSensitiveFields(
-        value as Record<string, unknown>,
-        maxDepth - 1,
-      );
-    } else if (typeof value === 'string' && lowerKey.includes('token')) {
-      // Catch fields like 'xsrf-token', 'id_token', etc.
-      result[key] = REDACTED;
-    } else {
-      result[key] = value;
-    }
-  }
+            if (
+                  value !== null &&
+                  typeof value === "object" &&
+                  !Array.isArray(value)
+            ) {
+                  result[key] = redactSensitiveFields(
+                        value as Record<string, unknown>,
+                        maxDepth - 1,
+                  );
+            } else if (
+                  typeof value === "string" &&
+                  lowerKey.includes("token")
+            ) {
+                  // Catch fields like 'xsrf-token', 'id_token', etc.
+                  result[key] = REDACTED;
+            } else {
+                  result[key] = value;
+            }
+      }
 
-  return result;
+      return result;
 }
 
 /**
  * Redact sensitive values from a Headers object or plain header record.
  */
 export function redactHeaders(
-  headers: Record<string, string> | Headers,
+      headers: Record<string, string> | Headers,
 ): Record<string, string> {
-  const plain: Record<string, string> = {};
+      const plain: Record<string, string> = {};
 
-  if (headers instanceof Headers) {
-    headers.forEach((value, key) => {
-      plain[key] = SENSITIVE_FIELDS.has(key.toLowerCase()) ? REDACTED : value;
-    });
-  } else {
-    for (const [key, value] of Object.entries(headers)) {
-      plain[key] = SENSITIVE_FIELDS.has(key.toLowerCase()) ? REDACTED : value;
-    }
-  }
+      if (headers instanceof Headers) {
+            headers.forEach((value, key) => {
+                  plain[key] = SENSITIVE_FIELDS.has(key.toLowerCase())
+                        ? REDACTED
+                        : value;
+            });
+      } else {
+            for (const [key, value] of Object.entries(headers)) {
+                  plain[key] = SENSITIVE_FIELDS.has(key.toLowerCase())
+                        ? REDACTED
+                        : value;
+            }
+      }
 
-  return plain;
+      return plain;
 }
 
 // ---------------------------------------------------------------------------
@@ -113,10 +124,10 @@ export function redactHeaders(
  * Used when no logger is configured to avoid null checks.
  */
 export const noopLogger: Logger = {
-  debug: () => undefined,
-  info: () => undefined,
-  warn: () => undefined,
-  error: () => undefined,
+      debug: () => undefined,
+      info: () => undefined,
+      warn: () => undefined,
+      error: () => undefined,
 };
 
 // ---------------------------------------------------------------------------
@@ -134,45 +145,45 @@ export type LogHandler = (entry: LogEntry) => void;
  * and forwards entries to one or more handlers.
  */
 export function createLogger(options: {
-  handlers: LogHandler[];
-  minLevel?: LogLevel;
+      handlers: LogHandler[];
+      minLevel?: LogLevel;
 }): Logger {
-  const { handlers, minLevel = 'info' } = options;
+      const { handlers, minLevel = "info" } = options;
 
-  const levels: Record<LogLevel, number> = {
-    debug: 0,
-    info: 1,
-    warn: 2,
-    error: 3,
-  };
+      const levels: Record<LogLevel, number> = {
+            debug: 0,
+            info: 1,
+            warn: 2,
+            error: 3,
+      };
 
-  function shouldLog(level: LogLevel): boolean {
-    return levels[level] >= levels[minLevel];
-  }
-
-  function emit(entry: LogEntry): void {
-    if (!shouldLog(entry.level)) return;
-
-    // Redact the entire entry before forwarding
-    const redacted = redactSensitiveFields(
-      entry as unknown as Record<string, unknown>,
-    ) as unknown as LogEntry;
-
-    for (const handler of handlers) {
-      try {
-        handler(redacted);
-      } catch {
-        // Logging should never crash the application
+      function shouldLog(level: LogLevel): boolean {
+            return levels[level] >= levels[minLevel];
       }
-    }
-  }
 
-  return {
-    debug: (entry) => emit({ ...entry, level: 'debug' }),
-    info: (entry) => emit({ ...entry, level: 'info' }),
-    warn: (entry) => emit({ ...entry, level: 'warn' }),
-    error: (entry) => emit({ ...entry, level: 'error' }),
-  };
+      function emit(entry: LogEntry): void {
+            if (!shouldLog(entry.level)) return;
+
+            // Redact the entire entry before forwarding
+            const redacted = redactSensitiveFields(
+                  entry as unknown as Record<string, unknown>,
+            ) as unknown as LogEntry;
+
+            for (const handler of handlers) {
+                  try {
+                        handler(redacted);
+                  } catch {
+                        // Logging should never crash the application
+                  }
+            }
+      }
+
+      return {
+            debug: (entry) => emit({ ...entry, level: "debug" }),
+            info: (entry) => emit({ ...entry, level: "info" }),
+            warn: (entry) => emit({ ...entry, level: "warn" }),
+            error: (entry) => emit({ ...entry, level: "error" }),
+      };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,26 +197,26 @@ export function createLogger(options: {
  * Should only be used in development — not production.
  */
 export function createConsoleHandler(): LogHandler {
-  return (entry: LogEntry) => {
-    const { level, message, ...rest } = entry;
+      return (entry: LogEntry) => {
+            const { level, message, ...rest } = entry;
 
-    switch (level) {
-      case 'debug':
-        // eslint-disable-next-line no-console
-        console.debug(`[API:DEBUG] ${message}`, rest);
-        break;
-      case 'info':
-        // eslint-disable-next-line no-console
-        console.info(`[API:INFO] ${message}`, rest);
-        break;
-      case 'warn':
-        console.warn(`[API:WARN] ${message}`, rest);
-        break;
-      case 'error':
-        console.error(`[API:ERROR] ${message}`, rest);
-        break;
-    }
-  };
+            switch (level) {
+                  case "debug":
+                        // eslint-disable-next-line no-console
+                        console.debug(`[API:DEBUG] ${message}`, rest);
+                        break;
+                  case "info":
+                        // eslint-disable-next-line no-console
+                        console.info(`[API:INFO] ${message}`, rest);
+                        break;
+                  case "warn":
+                        console.warn(`[API:WARN] ${message}`, rest);
+                        break;
+                  case "error":
+                        console.error(`[API:ERROR] ${message}`, rest);
+                        break;
+            }
+      };
 }
 
 /**
@@ -215,46 +226,46 @@ export function createConsoleHandler(): LogHandler {
  * Returns the handler and a manual flush function.
  */
 export function createBatchHandler(options: {
-  flush: (entries: LogEntry[]) => Promise<void>;
-  batchSize?: number;
-  flushIntervalMs?: number;
+      flush: (entries: LogEntry[]) => Promise<void>;
+      batchSize?: number;
+      flushIntervalMs?: number;
 }): { handler: LogHandler; flush: () => Promise<void> } {
-  const { flush, batchSize = 50, flushIntervalMs = 5000 } = options;
-  let buffer: LogEntry[] = [];
-  let timer: ReturnType<typeof setTimeout> | null = null;
+      const { flush, batchSize = 50, flushIntervalMs = 5000 } = options;
+      let buffer: LogEntry[] = [];
+      let timer: ReturnType<typeof setTimeout> | null = null;
 
-  async function flushBuffer(): Promise<void> {
-    if (buffer.length === 0) return;
+      async function flushBuffer(): Promise<void> {
+            if (buffer.length === 0) return;
 
-    const batch = buffer;
-    buffer = [];
+            const batch = buffer;
+            buffer = [];
 
-    try {
-      await flush(batch);
-    } catch {
-      // If flush fails, silently discard — logging should never crash
-    }
-  }
-
-  function scheduleFlush(): void {
-    if (timer !== null) return;
-
-    timer = setTimeout(() => {
-      timer = null;
-      void flushBuffer();
-    }, flushIntervalMs);
-  }
-
-  return {
-    handler: (entry: LogEntry) => {
-      buffer.push(entry);
-
-      if (buffer.length >= batchSize) {
-        void flushBuffer();
-      } else {
-        scheduleFlush();
+            try {
+                  await flush(batch);
+            } catch {
+                  // If flush fails, silently discard — logging should never crash
+            }
       }
-    },
-    flush: flushBuffer,
-  };
+
+      function scheduleFlush(): void {
+            if (timer !== null) return;
+
+            timer = setTimeout(() => {
+                  timer = null;
+                  void flushBuffer();
+            }, flushIntervalMs);
+      }
+
+      return {
+            handler: (entry: LogEntry) => {
+                  buffer.push(entry);
+
+                  if (buffer.length >= batchSize) {
+                        void flushBuffer();
+                  } else {
+                        scheduleFlush();
+                  }
+            },
+            flush: flushBuffer,
+      };
 }
