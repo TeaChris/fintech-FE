@@ -42,13 +42,59 @@ import type { ApiClient } from '@/api/types';
  * }
  * ```
  */
+/**
+ * Cookies that are safe to forward to the API backend.
+ * Only these cookies will be included in server-side requests.
+ */
+const ALLOWED_COOKIE_NAMES: ReadonlySet<string> = new Set([
+  'access_token',
+  'refresh_token',
+  'session_id',
+  'XSRF-TOKEN',
+]);
+
+/**
+ * Validate that the target base URL is a trusted first-party domain.
+ * Prevents accidental credential leakage to third-party APIs.
+ *
+ * Returns true if:
+ * - No override is provided (uses default API_BASE_URL)
+ * - The override matches the configured API_BASE_URL origin
+ * - The override is a relative URL
+ */
+function isTrustedBaseUrl(overrideUrl?: string): boolean {
+  if (!overrideUrl) return true;
+
+  // Relative URLs are safe (same origin)
+  if (overrideUrl.startsWith('/')) return true;
+
+  const configuredBase =
+    process.env.API_BASE_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    '';
+
+  if (!configuredBase) return true;
+
+  try {
+    const configuredOrigin = new URL(configuredBase).origin;
+    const overrideOrigin = new URL(overrideUrl).origin;
+    return configuredOrigin === overrideOrigin;
+  } catch {
+    return false;
+  }
+}
+
 export async function createServerClient(
   overrides?: { baseUrl?: string; timeout?: number },
 ): Promise<ApiClient> {
   // Read cookies from the incoming request
   const cookieStore = await cookies();
+
+  // Only forward allowed cookies, and only to trusted domains
+  const trusted = isTrustedBaseUrl(overrides?.baseUrl);
   const cookieHeader = cookieStore
     .getAll()
+    .filter((c) => trusted && ALLOWED_COOKIE_NAMES.has(c.name))
     .map((c) => `${c.name}=${c.value}`)
     .join('; ');
 
@@ -58,7 +104,7 @@ export async function createServerClient(
     runtime: 'server',
     defaultHeaders: {
       'Accept': 'application/json',
-      'Cookie': cookieHeader,
+      ...(cookieHeader ? { 'Cookie': cookieHeader } : {}),
     },
   });
 }
