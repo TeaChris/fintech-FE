@@ -107,10 +107,15 @@ export function calculateBackoff(
   // If we have a Retry-After value from the server, honor it
   if (isRateLimitError(error)) {
     const retryAfterMs = error.retryAfterSeconds * 1000;
+    // Guard against NaN propagation from malformed Retry-After headers
+    if (isNaN(retryAfterMs) || retryAfterMs <= 0) {
+      return config.maxDelay;
+    }
     // Add a small jitter to avoid all clients retrying at the same instant
     const jitter = retryAfterMs * config.jitterFactor * Math.random();
     return retryAfterMs + jitter;
   }
+
 
   // Exponential backoff: baseDelay * 2^attempt
   const exponentialDelay = config.baseDelay * Math.pow(2, attempt);
