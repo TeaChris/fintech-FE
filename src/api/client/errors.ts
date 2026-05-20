@@ -388,9 +388,27 @@ export async function mapResponseToError(
 
             case 429: {
                   const retryAfterHeader = response.headers.get("retry-after");
-                  const retryAfterSeconds = retryAfterHeader
-                        ? parseInt(retryAfterHeader, 10)
-                        : 60;
+                  let retryAfterSeconds = 60; // Safe default
+
+                  if (retryAfterHeader) {
+                        const parsed = parseInt(retryAfterHeader, 10);
+                        if (!isNaN(parsed) && parsed > 0) {
+                              // Retry-After is a delay-seconds value
+                              retryAfterSeconds = parsed;
+                        } else {
+                              // Retry-After may be an HTTP-date (RFC 7231 §7.1.3)
+                              const date = new Date(retryAfterHeader);
+                              if (!isNaN(date.getTime())) {
+                                    const deltaMs = date.getTime() - Date.now();
+                                    retryAfterSeconds = Math.max(
+                                          1,
+                                          Math.ceil(deltaMs / 1000),
+                                    );
+                              }
+                              // If neither parse succeeds, the 60s default is used
+                        }
+                  }
+
                   return new RateLimitError(
                         message,
                         baseMeta,
