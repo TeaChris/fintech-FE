@@ -60,7 +60,7 @@ export function detectResponseType(
 /**
  * Parse a JSON response body with money-safe deserialization.
  *
- * Uses our custom reviver that prevents float conversion of money fields
+ * Uses the custom reviver that prevents float conversion of money fields
  * and converts ISO date strings to Date objects.
  *
  * @param response - The fetch Response
