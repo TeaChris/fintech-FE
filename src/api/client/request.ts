@@ -38,7 +38,12 @@ export function interpolatePath(path: string, params?: PathParams): string {
       let result = path;
 
       for (const [key, value] of Object.entries(params)) {
-            const placeholder = `{${key}}`;
+            // Use a global regex to replace ALL occurrences of the placeholder,
+            // not just the first (which is what String.replace does by default).
+            const placeholder = new RegExp(
+                  `\\{${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\}`,
+                  'g',
+            );
             result = result.replace(
                   placeholder,
                   encodeURIComponent(String(value)),
@@ -47,6 +52,7 @@ export function interpolatePath(path: string, params?: PathParams): string {
 
       return result;
 }
+
 
 /**
  * Build a query string from a params object.
