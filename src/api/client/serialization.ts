@@ -127,12 +127,39 @@ export function safeReviver(key: string, value: unknown): unknown {
 }
 
 /**
+ * Pre-parse interceptor that converts numeric money field values to
+ * quoted strings BEFORE JSON.parse processes them.
+ *
+ * This prevents IEEE 754 precision loss for large monetary values
+ * by ensuring they are never parsed as JavaScript Numbers.
+ *
+ * Matches patterns like `"amount": 1234567890` and converts to
+ * `"amount": "1234567890"`.
+ */
+function preserveMoneyFieldPrecision(jsonText: string): string {
+  // Build a regex alternation from MONEY_FIELD_PATTERNS
+  const fieldNames = Array.from(MONEY_FIELD_PATTERNS).join('|');
+  // Match: "fieldName" : <number> (with optional whitespace)
+  // Captures the field name and the numeric value
+  const pattern = new RegExp(
+    `("(?:${fieldNames})"\\s*:\\s*)(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)`,
+    'gi',
+  );
+  return jsonText.replace(pattern, '$1"$2"');
+}
+
+/**
  * Money-safe JSON.parse wrapper.
  * Prevents accidental float conversion of monetary values
  * and converts ISO date strings to Date objects.
+ *
+ * Uses a two-phase approach:
+ * 1. Pre-parse: regex converts numeric money fields to strings in raw JSON
+ * 2. Parse: standard reviver handles dates and remaining conversions
  */
 export function safeParse(text: string): unknown {
-  return JSON.parse(text, safeReviver);
+  const sanitized = preserveMoneyFieldPrecision(text);
+  return JSON.parse(sanitized, safeReviver);
 }
 
 // ---------------------------------------------------------------------------
