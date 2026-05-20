@@ -35,14 +35,26 @@ export function extractCsrfToken(cookieName: string): string | undefined {
       }
 
       const cookies = document.cookie.split(";");
+      let token: string | undefined;
+
       for (const cookie of cookies) {
             const [name, ...valueParts] = cookie.trim().split("=");
             if (name === cookieName) {
-                  return decodeURIComponent(valueParts.join("="));
+                  const value = decodeURIComponent(valueParts.join("="));
+                  // Use the LAST matching cookie. Browsers list host-only
+                  // cookies before domain cookies, so the last match is
+                  // the most specific (host-only) cookie — reducing the
+                  // impact of cookie-tossing attacks from sibling subdomains.
+                  token = value;
             }
       }
 
-      return undefined;
+      // Basic sanity check: CSRF tokens should be non-empty and reasonably sized
+      if (token && (token.length < 8 || token.length > 512)) {
+            return undefined;
+      }
+
+      return token;
 }
 
 // ---------------------------------------------------------------------------
@@ -143,7 +155,7 @@ export function createAuthCoordinator(
        * The internal refresh function.
        * Can be set later via `setRefreshFn` to break circular dependencies.
        */
-      let performRefresh: (() => Promise<boolean>) | undefined = refreshFn;
+      const performRefresh: (() => Promise<boolean>) | undefined = refreshFn;
 
       /**
        * Execute the token refresh.
