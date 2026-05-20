@@ -109,7 +109,10 @@ export function createAuthMiddleware(
  */
 export function createIdempotencyMiddleware(): Middleware {
       return async (context, next) => {
-            const key = resolveIdempotencyKey(
+            // Reuse pre-generated key from context if available (retry safety),
+            // otherwise generate a new one.
+            const existingKey = context.metadata['idempotencyKey'] as string | undefined;
+            const key = existingKey ?? resolveIdempotencyKey(
                   context.config.method,
                   context.config.idempotencyKey,
             );
@@ -125,6 +128,7 @@ export function createIdempotencyMiddleware(): Middleware {
             return next();
       };
 }
+
 
 /**
  * Default headers middleware — applies default headers from config.
