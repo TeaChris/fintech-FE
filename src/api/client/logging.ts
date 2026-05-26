@@ -76,6 +76,16 @@ export function redactSensitiveFields(
                         value as Record<string, unknown>,
                         maxDepth - 1,
                   );
+            } else if (Array.isArray(value)) {
+                  // Recurse into arrays to redact sensitive fields in nested objects
+                  result[key] = value.map((item) =>
+                        item !== null && typeof item === "object" && !Array.isArray(item)
+                              ? redactSensitiveFields(
+                                      item as Record<string, unknown>,
+                                      maxDepth - 1,
+                                )
+                              : item,
+                  );
             } else if (
                   typeof value === "string" &&
                   lowerKey.includes("token")
@@ -100,13 +110,15 @@ export function redactHeaders(
 
       if (headers instanceof Headers) {
             headers.forEach((value, key) => {
-                  plain[key] = SENSITIVE_FIELDS.has(key.toLowerCase())
+                  const lowerKey = key.toLowerCase();
+                  plain[key] = SENSITIVE_FIELDS.has(lowerKey) || lowerKey.includes('token') || lowerKey.includes('secret')
                         ? REDACTED
                         : value;
             });
       } else {
             for (const [key, value] of Object.entries(headers)) {
-                  plain[key] = SENSITIVE_FIELDS.has(key.toLowerCase())
+                  const lowerKey = key.toLowerCase();
+                  plain[key] = SENSITIVE_FIELDS.has(lowerKey) || lowerKey.includes('token') || lowerKey.includes('secret')
                         ? REDACTED
                         : value;
             }
