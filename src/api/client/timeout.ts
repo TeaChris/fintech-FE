@@ -42,22 +42,26 @@ export interface TimeoutHandle {
  * @param userSignal - Optional user-provided AbortSignal
  * @returns TimeoutHandle with signal and cleanup function
  */
+/** Maximum allowed timeout to prevent indefinitely hanging connections */
+const MAX_TIMEOUT_MS = 120_000; // 2 minutes
+
 export function createTimeoutController(
       timeoutMs: number = DEFAULT_TIMEOUT_MS,
       userSignal?: AbortSignal,
 ): TimeoutHandle {
+      const effectiveTimeout = Math.min(Math.max(0, timeoutMs), MAX_TIMEOUT_MS);
       const controller = new AbortController()
 
       // Set up the timeout timer
       const timer = setTimeout(() => {
             controller.abort(
-                  new TimeoutError(`Request timed out after ${timeoutMs}ms`, {
+                  new TimeoutError(`Request timed out after ${effectiveTimeout}ms`, {
                         requestId: 'timeout',
                         correlationId: 'timeout',
-                        durationMs: timeoutMs,
+                        durationMs: effectiveTimeout,
                   }),
             )
-      }, timeoutMs)
+      }, effectiveTimeout)
 
       // If the user provided a signal, forward its abort to the controller
       if (userSignal) {
