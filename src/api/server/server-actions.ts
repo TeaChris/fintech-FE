@@ -12,6 +12,7 @@
 
 import type { ZodType } from "zod";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { createServerClient } from "./server-fetcher";
 import { validatePayload } from "@/api/client/validation";
@@ -26,6 +27,33 @@ import { TransferSchema, TransferRequestSchema } from "@/api/schemas";
 /**
  * Server Action result — discriminated union for client consumption.
  */
+// ---------------------------------------------------------------------------
+// CSRF Protection for Server Actions
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate that a Server Action request includes a valid Origin header.
+ * This provides defense-in-depth CSRF protection for financial mutations
+ * beyond Next.js's built-in action ID mechanism.
+ */
+async function validateOrigin(): Promise<boolean> {
+      const headerStore = await headers();
+      const origin = headerStore.get('origin');
+      const host = headerStore.get('host');
+
+      if (!origin || !host) {
+            // Missing headers — reject for safety
+            return false;
+      }
+
+      try {
+            const originHost = new URL(origin).host;
+            return originHost === host;
+      } catch {
+            return false;
+      }
+}
+
 export type ActionResult<T> =
       | { success: true; data: T }
       | {
@@ -74,6 +102,15 @@ export async function createTransferAction(
       payload: TransferRequest,
 ): Promise<ActionResult<Transfer>> {
       try {
+            // 0. CSRF: Validate Origin header for financial mutations
+            const originValid = await validateOrigin();
+            if (!originValid) {
+                  return {
+                        success: false,
+                        error: 'Invalid request origin. Please try again.',
+                  };
+            }
+
             // 1. Validate the payload on the server
             const validatedPayload = validatePayload(
                   TransferRequestSchema,
