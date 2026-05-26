@@ -22,7 +22,7 @@ export const IdSchema = z.string().min(1, 'ID must not be empty');
 export const TimestampSchema = z.string().datetime({ offset: true }).or(z.string().datetime());
 
 /** ISO 4217 currency code (e.g. "NGN", "USD") */
-export const CurrencyCodeSchema = z.string().length(3, 'Currency code must be 3 characters');
+export const CurrencyCodeSchema = z.string().length(3, 'Currency code must be 3 characters').regex(/^[A-Z]{3}$/, 'Currency code must be 3 uppercase letters (ISO 4217)');
 
 // ---------------------------------------------------------------------------
 // Money Safety
@@ -41,12 +41,29 @@ export const MoneySchema = z.object({
   amount: z
     .string()
     .min(1, 'Amount must not be empty')
-    .regex(/^-?\d+(\.\d+)?$/, 'Amount must be a valid decimal string'),
+    .regex(/^-?\d+(\.\d{1,2})?$/, 'Amount must be a valid decimal string with up to 2 decimal places'),
   currency: CurrencyCodeSchema,
 });
 
 /** Inferred TypeScript type for MoneySchema */
 export type Money = z.infer<typeof MoneySchema>;
+
+/**
+ * Positive money value schema for request inputs.
+ *
+ * CRITICAL: Only allows positive amounts — prevents negative amount injection
+ * in financial operations like transfers and payments.
+ */
+export const PositiveMoneySchema = z.object({
+  amount: z
+    .string()
+    .min(1, 'Amount must not be empty')
+    .regex(/^\d+(\.\d{1,2})?$/, 'Amount must be a positive decimal string with up to 2 decimal places'),
+  currency: CurrencyCodeSchema,
+});
+
+/** Inferred TypeScript type for PositiveMoneySchema */
+export type PositiveMoney = z.infer<typeof PositiveMoneySchema>;
 
 // ---------------------------------------------------------------------------
 // Pagination
