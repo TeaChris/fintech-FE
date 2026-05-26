@@ -48,6 +48,7 @@ export function composeMiddleware(
 
       for (let i = middlewares.length - 1; i >= 0; i--) {
             const middleware = middlewares[i];
+            if (!middleware) continue;
             const nextHandler = handler;
 
             handler = (context: RequestContext) =>
