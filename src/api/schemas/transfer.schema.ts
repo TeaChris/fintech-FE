@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { IdSchema, MoneySchema, TimestampSchema, createCursorPaginationSchema } from './common.schema';
+import { IdSchema, MoneySchema, PositiveMoneySchema, TimestampSchema, createCursorPaginationSchema } from './common.schema';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -74,10 +74,10 @@ export type Transfer = z.infer<typeof TransferSchema>;
 export const TransferRequestSchema = z.object({
   sourceAccountId: IdSchema,
   destinationAccountNumber: z.string().min(10).max(10),
-  destinationBankCode: z.string().min(3),
-  amount: MoneySchema,
+  destinationBankCode: z.string().min(3).max(10),
+  amount: PositiveMoneySchema,
   narration: z.string().max(100).optional(),
-  pin: z.string().min(4).max(6),
+  pin: z.string().min(4).max(6).regex(/^\d{4,6}$/, 'PIN must be 4-6 digits'),
 });
 export type TransferRequest = z.infer<typeof TransferRequestSchema>;
 
