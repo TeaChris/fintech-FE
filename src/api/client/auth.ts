@@ -305,6 +305,20 @@ export function createRefreshFn(
  * - The refresh endpoint itself (prevents infinite loops)
  * - Public paths that shouldn't have auth
  */
+/**
+ * Check if a path is public (doesn't require auth).
+ * Standalone version — no coordinator needed.
+ */
+export function isPublicPath(path: string, config: AuthConfig): boolean {
+      return config.publicPaths.some((publicPath) => {
+            if (path === publicPath) return true;
+            if (publicPath.endsWith('*')) {
+                  return path.startsWith(publicPath.slice(0, -1));
+            }
+            return false;
+      });
+}
+
 export function shouldAttemptRefresh(
       path: string,
       config: AuthConfig,
@@ -318,8 +332,7 @@ export function shouldAttemptRefresh(
       }
 
       // Don't refresh for public paths
-      const coordinator = createAuthCoordinator(config);
-      if (coordinator.isPublicPath(path)) {
+      if (isPublicPath(path, config)) {
             return false;
       }
 
