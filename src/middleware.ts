@@ -11,7 +11,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * - Referrer-Policy: Controls referrer leakage
  * - Permissions-Policy: Restricts browser APIs
  */
-export function middleware(request: NextRequest) {
+export function middleware(_request: NextRequest) {
   const response = NextResponse.next();
 
   // Prevent clickjacking — this is a fintech app, never embed in iframes
