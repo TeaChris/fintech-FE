@@ -65,7 +65,7 @@ export type AccountList = z.infer<typeof AccountListSchema>;
 
 export const AccountSummarySchema = z.object({
   id: IdSchema,
-  accountNumber: z.string(),
+  accountNumber: z.string().min(10).max(10),
   accountName: z.string(),
   type: AccountTypeSchema,
   status: AccountStatusSchema,
