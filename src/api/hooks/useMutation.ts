@@ -11,6 +11,7 @@
  * - Error mapping to typed domain errors
  */
 
+import { useRef } from 'react';
 import {
   useMutation,
   useQueryClient,
@@ -20,6 +21,7 @@ import {
 } from '@tanstack/react-query';
 import type { ZodType } from 'zod';
 import type { ApiClient, ApiResponse, HttpMethod } from '@/api/types';
+import { generateIdempotencyKey } from '@/api/client/idempotency';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -126,13 +128,21 @@ export function useApiMutation<TData, TVariables = void>(
     onSettled,
   } = options;
 
+  // Generate a stable idempotency key per hook instance.
+  // This prevents double-spend: if the user double-clicks,
+  // both calls share the same idempotency key and the backend
+  // deduplicates them. The key is regenerated when the hook re-mounts.
+  const stableIdempotencyKeyRef = useRef<string | undefined>(
+    isFinancialMutation ? (idempotencyKey ?? generateIdempotencyKey()) : idempotencyKey,
+  );
+
   const mutationOptions: UseMutationOptions<TData, Error, TVariables> = {
     mutationFn: async (variables: TVariables): Promise<TData> => {
       const requestConfig = {
         body: variables,
         schema: schema as ZodType | undefined,
         isFinancialMutation,
-        idempotencyKey,
+        idempotencyKey: stableIdempotencyKeyRef.current,
         timeout,
         headers,
         params,
@@ -197,6 +207,12 @@ export function useApiMutation<TData, TVariables = void>(
     },
 
     onSuccess: async (data, variables) => {
+      // Regenerate idempotency key for the next mutation
+      // (prevents key reuse across different logical operations)
+      if (isFinancialMutation) {
+        stableIdempotencyKeyRef.current = generateIdempotencyKey();
+      }
+
       // Invalidate related queries
       if (invalidateKeys) {
         await Promise.all(
