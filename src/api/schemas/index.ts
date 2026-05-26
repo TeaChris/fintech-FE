@@ -8,6 +8,7 @@ export {
   TimestampSchema,
   CurrencyCodeSchema,
   MoneySchema,
+  PositiveMoneySchema,
   createCursorPaginationSchema,
   createOffsetPaginationSchema,
   CursorPaginationParamsSchema,
@@ -18,7 +19,7 @@ export {
   SortOrderSchema,
   DateRangeSchema,
 } from './common.schema';
-export type { Money } from './common.schema';
+export type { Money, PositiveMoney } from './common.schema';
 
 // Account
 export {
