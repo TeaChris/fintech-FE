@@ -48,9 +48,9 @@ export function shouldRetry(
     return false;
   }
 
-  // CRITICAL: Never auto-retry financial POST mutations
+  // CRITICAL: Never auto-retry financial mutations (any method)
   // This prevents duplicate charges, transfers, etc.
-  if (isFinancialMutation && method === 'POST') {
+  if (isFinancialMutation) {
     return false;
   }
 
@@ -152,40 +152,24 @@ export function waitWithAbort(
     }
 
     const timer = setTimeout(() => {
+      cleanup();
       resolve(true);
     }, delayMs);
 
-    // Clean up the timer if the signal aborts during the wait
-    if (signal) {
-      const onAbort = (): void => {
-        clearTimeout(timer);
-        resolve(false);
-      };
-
-      signal.addEventListener('abort', onAbort, { once: true });
-
-      // Also clean up the event listener when the timer fires
-      const originalResolve = resolve;
-      const wrappedResolve = (value: boolean): void => {
+    function cleanup(): void {
+      if (signal) {
         signal.removeEventListener('abort', onAbort);
-        originalResolve(value);
-      };
+      }
+    }
 
+    function onAbort(): void {
       clearTimeout(timer);
-      const newTimer = setTimeout(() => {
-        wrappedResolve(true);
-      }, delayMs);
+      cleanup();
+      resolve(false);
+    }
 
-      // Re-register the abort handler with the new cleanup
-      signal.removeEventListener('abort', onAbort);
-      signal.addEventListener(
-        'abort',
-        () => {
-          clearTimeout(newTimer);
-          resolve(false);
-        },
-        { once: true },
-      );
+    if (signal) {
+      signal.addEventListener('abort', onAbort, { once: true });
     }
   });
 }
