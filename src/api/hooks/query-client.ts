@@ -59,11 +59,6 @@ export function createQueryClient(): QueryClient {
                          */
                         refetchOnReconnect: true,
 
-                        /**
-                         * Keep previous data while refetching for smoother UX.
-                         */
-                        placeholderData: (previousData: unknown) =>
-                              previousData,
                   },
 
                   mutations: {
