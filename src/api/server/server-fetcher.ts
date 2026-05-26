@@ -73,7 +73,7 @@ function isTrustedBaseUrl(overrideUrl?: string): boolean {
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     '';
 
-  if (!configuredBase) return true;
+  if (!configuredBase) return false;
 
   try {
     const configuredOrigin = new URL(configuredBase).origin;
@@ -95,7 +95,7 @@ export async function createServerClient(
   const cookieHeader = cookieStore
     .getAll()
     .filter((c) => trusted && ALLOWED_COOKIE_NAMES.has(c.name))
-    .map((c) => `${c.name}=${c.value}`)
+    .map((c) => `${c.name}=${encodeURIComponent(c.value)}`)
     .join('; ');
 
   return createApiClient({
