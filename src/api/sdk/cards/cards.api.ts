@@ -33,6 +33,7 @@ export function createCardsApi(client: ApiClient): CardsApi {
         params: { cardId },
         body: { reason },
         schema: CardSchema as unknown as ZodType,
+        isFinancialMutation: true,
       }),
 
     activate: (data) =>
@@ -40,6 +41,7 @@ export function createCardsApi(client: ApiClient): CardsApi {
         params: { cardId: data.cardId },
         body: { pin: data.pin, cvv: data.cvv, expiryMonth: data.expiryMonth, expiryYear: data.expiryYear },
         schema: CardSchema as unknown as ZodType,
+        isFinancialMutation: true,
       }),
   };
 }
