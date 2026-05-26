@@ -262,11 +262,11 @@ export function createApiClient(
                                           const refreshed =
                                                 await authCoordinator.handleUnauthorized();
                                           if (refreshed) {
-                                                // Auth refreshed — retry will be handled by the retry engine
-                                                // Throw an auth error so the retry loop picks it up
-                                                throw await mapResponseToError(
-                                                      response.clone(),
-                                                      errorContext,
+                                                // Auth refreshed — re-execute the request directly.
+                                                // We bypass the retry engine because AuthError is not retryable
+                                                // by design (prevents infinite refresh loops).
+                                                return executeRequest<TData>(
+                                                      requestConfig,
                                                 );
                                           }
                                     }
