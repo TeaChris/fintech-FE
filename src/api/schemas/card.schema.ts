@@ -73,8 +73,8 @@ export type CardList = z.infer<typeof CardListSchema>;
 
 export const CardActivationSchema = z.object({
   cardId: IdSchema,
-  pin: z.string().length(4, 'PIN must be 4 digits'),
-  cvv: z.string().length(3, 'CVV must be 3 digits'),
+  pin: z.string().length(4, 'PIN must be 4 digits').regex(/^\d{4}$/, 'PIN must be exactly 4 digits'),
+  cvv: z.string().length(3, 'CVV must be 3 digits').regex(/^\d{3}$/, 'CVV must be exactly 3 digits'),
   expiryMonth: z.number().int().min(1).max(12),
   expiryYear: z.number().int(),
 });
