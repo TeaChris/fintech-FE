@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata } from 'next'
 
-import { AuthLayout } from "@/features/auth";
+import { AuthLayout } from '@/features'
 
 export const metadata: Metadata = {
-  title: "Authentication — FinanceOS",
-  description:
-    "Secure authentication for your FinanceOS account. Sign in, create an account, or manage your credentials.",
-};
+      title: 'Authentication — BpaY',
+      description:
+            'Secure authentication for your BpaY account. Sign in, create an account, or manage your credentials.',
+}
 
 /**
  * Shared layout for all auth routes under `(auth)/`.
@@ -16,9 +16,9 @@ export const metadata: Metadata = {
  * only need to render their `AuthCard` content.
  */
 export default function AuthRouteLayout({
-  children,
+      children,
 }: Readonly<{
-  children: React.ReactNode;
+      children: React.ReactNode
 }>) {
-  return <AuthLayout>{children}</AuthLayout>;
+      return <AuthLayout>{children}</AuthLayout>
 }
