@@ -18,7 +18,7 @@ export function LogoMark({ className }: LogoMarkProps) {
       return (
             <Link
                   href="/"
-                  aria-label="FinanceOS — Go to homepage"
+                  aria-label="BpaY — Go to homepage"
                   className={cn(
                         'inline-flex items-center gap-2 text-foreground transition-opacity hover:opacity-80',
                         className,
