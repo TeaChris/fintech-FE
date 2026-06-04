@@ -8,11 +8,6 @@ const geistSans = Geist({
       subsets: ['latin'],
 })
 
-const geistMono = Geist_Mono({
-      variable: '--font-geist-mono',
-      subsets: ['latin'],
-})
-
 const comfortaa = Comfortaa({
       display: 'swap',
       subsets: ['latin'],
@@ -36,7 +31,7 @@ export default function RootLayout({
       return (
             <html
                   lang="en"
-                  className={`${geistSans.variable} ${geistMono.variable} ${comfortaa.variable} h-full antialiased`}
+                  className={`${geistSans.variable} ${comfortaa.variable} h-full antialiased`}
             >
                   <body className="min-h-full flex flex-col">
                         <ApiProvider>{children}</ApiProvider>
