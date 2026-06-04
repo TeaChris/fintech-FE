@@ -10,24 +10,6 @@ import { cn } from "@/lib/utils";
 
 import type { AuthCardProps } from "@/features/auth/types/auth.types";
 
-/**
- * Standardized card container for auth forms.
- *
- * Wraps shadcn's Card primitives with consistent sizing, spacing,
- * and structure. The `children` slot receives the form content;
- * the `footer` slot is for alternate action links.
- *
- * @example
- * ```tsx
- * <AuthCard
- *   title="Sign in to your account"
- *   description="Enter your credentials below."
- *   footer={<p>Don't have an account? <Link href="/sign-up">Sign up</Link></p>}
- * >
- *   <SignInForm />
- * </AuthCard>
- * ```
- */
 export function AuthCard({
   children,
   title,
@@ -37,19 +19,21 @@ export function AuthCard({
 }: AuthCardProps) {
   return (
     <Card
-      className={cn("w-full max-w-sm", className)}
+      className={cn("w-full max-w-md rounded-2xl py-6 shadow-sm", className)}
     >
-      <CardHeader>
-        <CardTitle className="text-xl font-semibold tracking-tight">
+      <CardHeader className="px-6">
+        <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
           {title}
         </CardTitle>
         {description ? (
-          <CardDescription>{description}</CardDescription>
+          <CardDescription className="text-sm">{description}</CardDescription>
         ) : null}
       </CardHeader>
-      <CardContent>{children}</CardContent>
+
+      <CardContent className="px-6">{children}</CardContent>
+
       {footer ? (
-        <CardFooter className="justify-center">
+        <CardFooter className="justify-center border-none bg-transparent px-6">
           <div className="text-sm text-muted-foreground">{footer}</div>
         </CardFooter>
       ) : null}
