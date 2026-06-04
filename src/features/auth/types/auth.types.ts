@@ -30,20 +30,6 @@ export interface AuthCardProps {
   className?: string;
 }
 
-/** Props for the brand header section (logo + headline + description). */
-export interface AuthHeaderProps {
-  /** Brand headline text. */
-  headline?: string;
-  /** Brand description text. */
-  description?: string;
-  /** Additional className. */
-  className?: string;
-}
-
-/** Props for the trust indicators component. */
-export interface TrustIndicatorsProps {
-  className?: string;
-}
 
 /** Props for the auth footer. */
 export interface AuthFooterProps {
