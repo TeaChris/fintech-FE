@@ -1,83 +1,47 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils'
 
-import type { AuthLayoutProps } from "@/features/auth/types/auth.types";
-import { AuthHeader } from "@/features/auth/components/auth-header";
-import { AuthFooter } from "@/features/auth/components/auth-footer";
-import { TrustIndicators } from "@/features/auth/components/trust-indicators";
+import type { AuthLayoutProps } from '@/features/auth/types/auth.types'
+import { AuthHeader } from '@/features/auth/components/auth-header'
+import { AuthFooter } from '@/features/auth/components/auth-footer'
+import { TrustIndicators } from '@/features/auth/components/trust-indicators'
+import { LogoMark } from '@/features/auth/components/logo-mark'
+import { FadeIn } from '@/features/auth/components/fade-in'
+import { AuthNav } from './auth.nav'
 
-/**
- * Full-page layout wrapper for all auth routes.
- *
- * Orchestrates the header, main content area, trust indicators, and footer
- * into a consistent full-viewport layout. Supports an optional side content
- * panel for desktop (hidden on mobile).
- *
- * Layout structure:
- * ```
- * ┌─────────────────────────────────┐
- * │  AuthHeader (logo + action)     │
- * ├─────────────────────────────────┤
- * │                                 │
- * │   [sideContent]? | AuthCard     │
- * │                                 │
- * ├─────────────────────────────────┤
- * │  TrustIndicators                │
- * │  AuthFooter                     │
- * └─────────────────────────────────┘
- * ```
- *
- * @example
- * ```tsx
- * // Basic usage — centered card layout
- * <AuthLayout>
- *   <AuthCard title="Sign in">...</AuthCard>
- * </AuthLayout>
- *
- * // With side content (split layout on desktop)
- * <AuthLayout sideContent={<TestimonialPanel />}>
- *   <AuthCard title="Sign in">...</AuthCard>
- * </AuthLayout>
- * ```
- */
 export function AuthLayout({
-  children,
-  sideContent,
-  showTrustIndicators = true,
-  footerLinks,
-  headerAction,
+      children,
+      headline = 'Access your BpaY account',
+      description = 'Securely sign in to manage payments, balances, transfers, and business operations.',
+      showTrustIndicators = true,
+      footerLinks,
 }: AuthLayoutProps) {
-  return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <AuthHeader action={headerAction} />
+      return (
+            <div className="min-h-svh bg-background ">
+                  <AuthNav />
 
-      {sideContent ? (
-        <main className="flex flex-1">
-          {/* Side content — hidden on mobile, shown on lg+ */}
-          <div
-            className={cn(
-              "hidden lg:flex lg:flex-1",
-              "items-center justify-center",
-              "border-r border-border bg-muted/30 px-8"
-            )}
-          >
-            {sideContent}
-          </div>
+                  {/* ── Right content area ─────────────────────────────────────── */}
+                  <main className="hidden lg:grid lg:grid-cols-3">
+                        {/* Mobile header */}
+                        <header className="flex items-center px-6 py-5 lg:hidden">
+                              <LogoMark />
+                        </header>
 
-          {/* Card area */}
-          <div className="flex flex-1 items-center justify-center px-6 py-8 sm:px-8">
-            {children}
-          </div>
-        </main>
-      ) : (
-        <main className="flex flex-1 items-center justify-center px-6 py-8 sm:px-8">
-          {children}
-        </main>
-      )}
+                        {/* Centered card area */}
+                        <div className="flex flex-1 items-center justify-center px-6 py-8 sm:px-10">
+                              {children}
+                        </div>
 
-      <div className="flex flex-col items-center gap-1 pb-2">
-        {showTrustIndicators ? <TrustIndicators /> : null}
-        <AuthFooter links={footerLinks} />
-      </div>
-    </div>
-  );
+                        {/* Mobile footer */}
+                        <div className="px-6 pb-6 lg:hidden">
+                              {showTrustIndicators ? (
+                                    <TrustIndicators className="mb-4 flex-row flex-wrap gap-x-5 text-muted-foreground [&_svg]:opacity-100 [&_span]:opacity-100" />
+                              ) : null}
+                              <AuthFooter
+                                    links={footerLinks}
+                                    className="justify-center"
+                              />
+                        </div>
+                  </main>
+            </div>
+      )
 }
