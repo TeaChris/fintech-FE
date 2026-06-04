@@ -3,25 +3,23 @@ import { cn } from "@/lib/utils";
 import type { AuthHeaderProps } from "@/features/auth/types/auth.types";
 import { LogoMark } from "@/features/auth/components/logo-mark";
 
-/**
- * Auth page header — logo on the left, optional action on the right.
- *
- * Renders as a semantic `<header>` with consistent height and padding
- * across all auth routes. The `action` slot is commonly used for a link
- * to the alternate auth page (e.g., "Sign up" on the sign-in page).
- */
-export function AuthHeader({ action }: AuthHeaderProps) {
+export function AuthHeader({ headline, description, className }: AuthHeaderProps) {
   return (
-    <header
-      className={cn(
-        "flex w-full items-center justify-between px-6 py-4",
-        "sm:px-8"
-      )}
-    >
-      <LogoMark />
-      {action ? (
-        <div className="flex items-center gap-2 text-sm">{action}</div>
+    <div className={cn("flex flex-col gap-4", className)}>
+      <LogoMark variant="light" />
+
+      {headline ? (
+        <div className="mt-6 flex flex-col gap-3">
+          <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight xl:text-3xl">
+            {headline}
+          </h1>
+          {description ? (
+            <p className="max-w-[36ch] text-sm leading-relaxed opacity-50 xl:text-base">
+              {description}
+            </p>
+          ) : null}
+        </div>
       ) : null}
-    </header>
+    </div>
   );
 }
