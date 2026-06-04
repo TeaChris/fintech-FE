@@ -1,75 +1,71 @@
-/**
- * Auth Layout System — Shared Types
- *
- * These types define the public API for all reusable auth layout components.
- * Any auth page can compose these components with full type safety.
- */
-
 /** A single link rendered in the auth footer. */
 export interface AuthFooterLink {
-  /** Visible link text */
   label: string;
-  /** Navigation target — can be a relative path or external URL */
   href: string;
 }
 
-/** Props for the full-page auth layout wrapper. */
+/** Props for the full-page two-column auth layout. */
 export interface AuthLayoutProps {
   children: React.ReactNode;
-  /**
-   * Optional slot for content beside the main card area.
-   * Use for testimonials, illustrations, or branding on desktop.
-   * Hidden on mobile — only shown at `lg` breakpoint and above.
-   */
-  sideContent?: React.ReactNode;
-  /** Whether to show trust indicators (encryption, compliance). Defaults to `true`. */
+  /** Headline for the left brand panel. */
+  headline?: string;
+  /** Description for the left brand panel. */
+  description?: string;
+  /** Show trust indicators in the left panel. Defaults to `true`. */
   showTrustIndicators?: boolean;
-  /** Override the default footer links (Terms, Privacy, Help). */
+  /** Override the default footer links. */
   footerLinks?: AuthFooterLink[];
-  /** Optional action rendered in the header (e.g., a "Sign Up" link). */
-  headerAction?: React.ReactNode;
 }
 
 /** Props for the standardized auth card container. */
 export interface AuthCardProps {
   children: React.ReactNode;
-  /** Page heading displayed at the top of the card (e.g., "Sign in to your account"). */
+  /** Card heading (e.g., "Welcome back"). */
   title: string;
-  /** Short contextual subtitle below the title. */
+  /** Subtitle below the heading. */
   description?: string;
-  /**
-   * Optional content rendered below the card body.
-   * Typically used for alternate navigation (e.g., "Don't have an account? Sign up").
-   */
+  /** Optional footer content (e.g., "Don't have an account?"). */
   footer?: React.ReactNode;
-  /** Additional className merged onto the outer Card element. */
+  /** Additional className merged onto the outer Card. */
   className?: string;
 }
 
-/** Props for the auth header bar. */
+/** Props for the brand header section (logo + headline + description). */
 export interface AuthHeaderProps {
-  /**
-   * Optional right-aligned action slot.
-   * Common usage: a link to the alternate auth page.
-   *
-   * @example
-   * ```tsx
-   * <AuthHeader action={<Link href="/sign-up">Create account</Link>} />
-   * ```
-   */
-  action?: React.ReactNode;
+  /** Brand headline text. */
+  headline?: string;
+  /** Brand description text. */
+  description?: string;
+  /** Additional className. */
+  className?: string;
 }
 
 /** Props for the trust indicators component. */
 export interface TrustIndicatorsProps {
-  /** Additional className merged onto the container. */
   className?: string;
 }
 
 /** Props for the auth footer. */
 export interface AuthFooterProps {
-  /** Override the default set of footer links. */
   links?: AuthFooterLink[];
-  /** Additional className merged onto the footer element. */
   className?: string;
+  /** Use "light" for dark backgrounds (brand panel). */
+  variant?: "light" | "default";
+}
+
+/** Props for the LogoMark component. */
+export interface LogoMarkProps {
+  className?: string;
+  /** Use "light" for dark backgrounds (brand panel). */
+  variant?: "light" | "default";
+}
+
+/** Props for the FadeIn motion wrapper. */
+export interface FadeInProps {
+  children: React.ReactNode;
+  className?: string;
+  /** Delay before animation starts (seconds). */
+  delay?: number;
+  /** Direction of the slide animation. */
+  direction?: "up" | "down" | "left" | "right" | "none";
 }
