@@ -12,16 +12,16 @@ export const metadata: Metadata = {
 
 export default function SignInPage() {
       return (
-            <FadeIn direction="up" delay={0.04}>
+            <FadeIn direction="up" delay={0.04} className="w-full">
                   <AuthCard
                         title="Welcome back"
-                        description="Sign in to access your BpaY account."
+                        description="Sign in to access your BpaY account"
                         footer={
                               <p>
                                     Don&apos;t have an account?{' '}
                                     <Link
                                           href="/sign-up"
-                                          className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary "
+                                          className="font-medium text-accent underline underline-offset-4 transition-colors hover:text-foreground"
                                     >
                                           Sign up
                                     </Link>
