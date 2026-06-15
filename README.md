@@ -12,10 +12,10 @@ A production-grade, highly resilient frontend architecture built with Next.js 16
 ## ✨ Features
 
 - **Money-Safe Serialization:** Custom JSON parsing guarantees that monetary values (like `balance`, `amount`, `fee`) are strictly treated as strings. This eliminates IEEE 754 floating-point precision errors critical in financial applications.
-- **Advanced Resilience & Reliability:** 
-  - Exponential backoff with jitter for transient network failures.
-  - **Financial Mutation Safety:** Explicitly guards against auto-retrying non-idempotent financial POST requests.
-  - AbortController-based timeout management with signal merging.
+- **Advanced Resilience & Reliability:**
+     - Exponential backoff with jitter for transient network failures.
+     - **Financial Mutation Safety:** Explicitly guards against auto-retrying non-idempotent financial POST requests.
+     - AbortController-based timeout management with signal merging.
 - **Comprehensive Error Architecture:** A 10-class domain-specific error hierarchy (e.g., `ApiError`, `AuthError`, `ValidationError`, `RateLimitError`) with automated HTTP response mapping and TypeScript type guards.
 - **TanStack Query Integration:** Fully integrated with `@tanstack/react-query` providing hierarchical query keys for surgical cache invalidation, optimistic updates, and SSR hydration.
 - **Edge & SSR Ready:** Strictly separates server and client concerns. Uses `server-only` guards, React `cache()` for request deduplication, and reads cookies from `next/headers` for secure auth forwarding in Server Components and Server Actions.
@@ -37,37 +37,42 @@ A production-grade, highly resilient frontend architecture built with Next.js 16
 ### Prerequisites
 
 Ensure you have the following installed on your local machine:
+
 - **Node.js** (v20 or higher recommended)
 - **pnpm** (v9+ recommended, or npm/yarn)
 
 ### Installation
 
 1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-org/frontend-architecture.git
-   cd frontend-architecture
-   ```
+
+      ```bash
+      git clone https://github.com/your-org/frontend-architecture.git
+      cd frontend-architecture
+      ```
 
 2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
+
+      ```bash
+      pnpm install
+      ```
 
 3. **Set up environment variables:**
    Create a `.env.local` file in the root directory based on `.env.example` (if available), or set the necessary variables:
-   ```env
-   NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api
-   ```
+
+      ```env
+      NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/
+      ```
 
 4. **Run the development server:**
-   ```bash
-   pnpm dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+      ```bash
+      pnpm dev
+      ```
+      Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ### Running Tests
 
 Execute the unit and integration tests (which utilize MSW to mock backend responses) via Vitest:
+
 ```bash
 # Run tests
 pnpm test
@@ -86,19 +91,23 @@ pnpm test:coverage
 Use the server client to safely fetch data on the server, forwarding the user's cookies securely:
 
 ```tsx
-import { getCachedServerClient } from '@/api/server';
-import { AccountSchema } from '@/api/schemas';
-import type { Account } from '@/api/schemas';
+import { getCachedServerClient } from '@/api/server'
+import { AccountSchema } from '@/api/schemas'
+import type { Account } from '@/api/schemas'
 
-export default async function AccountDashboard({ params }: { params: { id: string } }) {
-  const client = await getCachedServerClient();
-  
-  const { data: account } = await client.get<Account>('/accounts/{id}', {
-    params: { id: params.id },
-    schema: AccountSchema,
-  });
+export default async function AccountDashboard({
+      params,
+}: {
+      params: { id: string }
+}) {
+      const client = await getCachedServerClient()
 
-  return <AccountDetails account={account} />;
+      const { data: account } = await client.get<Account>('/accounts/{id}', {
+            params: { id: params.id },
+            schema: AccountSchema,
+      })
+
+      return <AccountDetails account={account} />
 }
 ```
 
@@ -107,31 +116,32 @@ export default async function AccountDashboard({ params }: { params: { id: strin
 Use the integrated TanStack Query hooks for safe, typed mutations:
 
 ```tsx
-'use client';
-import { useApiMutation, queryKeys } from '@/api/hooks';
-import { createTransfersApi } from '@/api/sdk/transfers';
-import { useApiClient } from '@/api/client/context'; // Example context
+'use client'
+import { useApiMutation, queryKeys } from '@/api/hooks'
+import { createTransfersApi } from '@/api/sdk/transfers'
+import { useApiClient } from '@/api/client/context' // Example context
 
 export function TransferForm() {
-  const client = useApiClient();
-  const transfersApi = createTransfersApi(client);
+      const client = useApiClient()
+      const transfersApi = createTransfersApi(client)
 
-  const transfer = useApiMutation({
-    client,
-    path: '/transfers',
-    method: 'POST',
-    // CRITICAL: Prevent auto-retry on financial mutations
-    isFinancialMutation: true, 
-    invalidateKeys: [queryKeys.accounts.all, queryKeys.transfers.all],
-  });
+      const transfer = useApiMutation({
+            client,
+            path: '/transfers',
+            method: 'POST',
+            // CRITICAL: Prevent auto-retry on financial mutations
+            isFinancialMutation: true,
+            invalidateKeys: [queryKeys.accounts.all, queryKeys.transfers.all],
+      })
 
-  // ... handle submit
+      // ... handle submit
 }
 ```
 
 ## 📖 API Reference
 
-The core SDK logic is located in `src/api/`. 
+The core SDK logic is located in `src/api/`.
+
 - **`src/api/client/`**: Core fetcher, middleware, serialization, and error handling.
 - **`src/api/hooks/`**: TanStack Query wrappers (`useApiQuery`, `useApiMutation`, etc.).
 - **`src/api/schemas/`**: Zod domain definitions.
