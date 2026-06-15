@@ -11,17 +11,17 @@
  */
 
 import type {
+      Logger,
       Middleware,
       RequestContext,
       ApiClientConfig,
       // HttpMethod,
-} from "@/api/types";
+} from '@/api/types'
 
-import type { Logger } from "@/api/types";
-import { redactHeaders } from "./logging";
-import type { AuthCoordinator } from "./auth";
-import { buildTracingHeaders } from "./tracing";
-import { buildIdempotencyHeader, resolveIdempotencyKey } from "./idempotency";
+import { redactHeaders } from './logging'
+import type { AuthCoordinator } from './auth'
+import { buildTracingHeaders } from './tracing'
+import { buildIdempotencyHeader, resolveIdempotencyKey } from './idempotency'
 
 // ---------------------------------------------------------------------------
 // Middleware Composition
@@ -44,18 +44,18 @@ export function composeMiddleware(
       finalHandler: (context: RequestContext) => Promise<Response>,
 ): (context: RequestContext) => Promise<Response> {
       // Build the chain from right to left
-      let handler = finalHandler;
+      let handler = finalHandler
 
       for (let i = middlewares.length - 1; i >= 0; i--) {
-            const middleware = middlewares[i];
-            if (!middleware) continue;
-            const nextHandler = handler;
+            const middleware = middlewares[i]
+            if (!middleware) continue
+            const nextHandler = handler
 
             handler = (context: RequestContext) =>
-                  middleware(context, () => nextHandler(context));
+                  middleware(context, () => nextHandler(context))
       }
 
-      return handler;
+      return handler
 }
 
 // ---------------------------------------------------------------------------
@@ -72,13 +72,13 @@ export function createTracingMiddleware(clientVersion?: string): Middleware {
                   requestId: context.requestId,
                   correlationId: context.correlationId,
                   clientVersion,
-            });
+            })
 
             // Merge tracing headers into context
-            Object.assign(context.headers, tracingHeaders);
+            Object.assign(context.headers, tracingHeaders)
 
-            return next();
-      };
+            return next()
+      }
 }
 
 /**
@@ -89,19 +89,19 @@ export function createAuthMiddleware(
       authCoordinator: AuthCoordinator,
 ): Middleware {
       return async (context, next) => {
-            const { config } = context;
+            const { config } = context
 
             // Skip auth for public paths or explicit opt-out
             if (config.skipAuth || authCoordinator.isPublicPath(config.path)) {
-                  return next();
+                  return next()
             }
 
             // Build auth-related headers (CSRF token, etc.)
-            const authHeaders = authCoordinator.buildAuthHeaders(config.method);
-            Object.assign(context.headers, authHeaders);
+            const authHeaders = authCoordinator.buildAuthHeaders(config.method)
+            Object.assign(context.headers, authHeaders)
 
-            return next();
-      };
+            return next()
+      }
 }
 
 /**
@@ -112,24 +112,27 @@ export function createIdempotencyMiddleware(): Middleware {
       return async (context, next) => {
             // Reuse pre-generated key from context if available (retry safety),
             // otherwise generate a new one.
-            const existingKey = context.metadata['idempotencyKey'] as string | undefined;
-            const key = existingKey ?? resolveIdempotencyKey(
-                  context.config.method,
-                  context.config.idempotencyKey,
-            );
+            const existingKey = context.metadata['idempotencyKey'] as
+                  | string
+                  | undefined
+            const key =
+                  existingKey ??
+                  resolveIdempotencyKey(
+                        context.config.method,
+                        context.config.idempotencyKey,
+                  )
 
             if (key) {
-                  const header = buildIdempotencyHeader(key);
-                  Object.assign(context.headers, header);
+                  const header = buildIdempotencyHeader(key)
+                  Object.assign(context.headers, header)
 
                   // Store the key in metadata for retry reuse
-                  context.metadata["idempotencyKey"] = key;
+                  context.metadata['idempotencyKey'] = key
             }
 
-            return next();
-      };
+            return next()
+      }
 }
-
 
 /**
  * Default headers middleware — applies default headers from config.
@@ -140,9 +143,9 @@ export function createDefaultHeadersMiddleware(
 ): Middleware {
       return async (context, next) => {
             // Default headers are applied first, allowing per-request overrides
-            context.headers = { ...defaultHeaders, ...context.headers };
-            return next();
-      };
+            context.headers = { ...defaultHeaders, ...context.headers }
+            return next()
+      }
 }
 
 /**
@@ -151,25 +154,25 @@ export function createDefaultHeadersMiddleware(
  */
 export function createLoggingMiddleware(logger: Logger): Middleware {
       return async (context, next) => {
-            const { requestId, correlationId, config } = context;
+            const { requestId, correlationId, config } = context
 
             // Log request start
             logger.info({
-                  level: "info",
+                  level: 'info',
                   message: `API Request: ${config.method} ${config.path}`,
                   timestamp: new Date().toISOString(),
                   requestId,
                   correlationId,
                   method: config.method,
                   url: config.path,
-            });
+            })
 
             try {
-                  const response = await next();
+                  const response = await next()
 
                   // Log successful response
                   logger.info({
-                        level: "info",
+                        level: 'info',
                         message: `API Response: ${response.status} ${config.method} ${config.path}`,
                         timestamp: new Date().toISOString(),
                         requestId,
@@ -178,13 +181,13 @@ export function createLoggingMiddleware(logger: Logger): Middleware {
                         url: config.path,
                         status: response.status,
                         headers: redactHeaders(response.headers),
-                  });
+                  })
 
-                  return response;
+                  return response
             } catch (error) {
                   // Log error
                   logger.error({
-                        level: "error",
+                        level: 'error',
                         message: `API Error: ${config.method} ${config.path}`,
                         timestamp: new Date().toISOString(),
                         requestId,
@@ -194,12 +197,12 @@ export function createLoggingMiddleware(logger: Logger): Middleware {
                         error:
                               error instanceof Error
                                     ? error.message
-                                    : "Unknown error",
-                  });
+                                    : 'Unknown error',
+                  })
 
-                  throw error;
+                  throw error
             }
-      };
+      }
 }
 
 // ---------------------------------------------------------------------------
@@ -225,33 +228,33 @@ export function buildMiddlewarePipeline(
       clientConfig: ApiClientConfig,
       authCoordinator: AuthCoordinator,
 ): Middleware[] {
-      const pipeline: Middleware[] = [];
+      const pipeline: Middleware[] = []
 
       // 1. Logging (outermost — wraps everything)
       if (clientConfig.logger) {
-            pipeline.push(createLoggingMiddleware(clientConfig.logger));
+            pipeline.push(createLoggingMiddleware(clientConfig.logger))
       }
 
       // 2. Default headers
       if (clientConfig.defaultHeaders) {
             pipeline.push(
                   createDefaultHeadersMiddleware(clientConfig.defaultHeaders),
-            );
+            )
       }
 
       // 3. Tracing
-      pipeline.push(createTracingMiddleware());
+      pipeline.push(createTracingMiddleware())
 
       // 4. Auth
-      pipeline.push(createAuthMiddleware(authCoordinator));
+      pipeline.push(createAuthMiddleware(authCoordinator))
 
       // 5. Idempotency
-      pipeline.push(createIdempotencyMiddleware());
+      pipeline.push(createIdempotencyMiddleware())
 
       // 6. User-provided middleware
       if (clientConfig.middleware) {
-            pipeline.push(...clientConfig.middleware);
+            pipeline.push(...clientConfig.middleware)
       }
 
-      return pipeline;
+      return pipeline
 }
