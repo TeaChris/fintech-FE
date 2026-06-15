@@ -1,13 +1,17 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { Eye, EyeOff, Mail, LockKeyhole } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import {
+      Input,
+      Field,
+      Button,
+      Checkbox,
+      FieldGroup,
+      FieldLabel,
+} from '@/components'
 
 export function SignInForm() {
       const [showPassword, setShowPassword] = useState(false)
