@@ -333,7 +333,22 @@ async function parseErrorBody(response: Response): Promise<ApiErrorResponse> {
             const contentType = response.headers.get("content-type") ?? "";
 
             if (contentType.includes("application/json")) {
-                  return (await response.json()) as ApiErrorResponse;
+                  const raw = (await response.json()) as Record<string, unknown>;
+
+                  // Unwrap backend error envelope: { success: false, error: { code, message } }
+                  if (
+                        raw.success === false &&
+                        raw.error !== null &&
+                        typeof raw.error === "object"
+                  ) {
+                        const envelope = raw.error as Record<string, unknown>;
+                        return {
+                              code: envelope.code as string | undefined,
+                              message: envelope.message as string | undefined,
+                        };
+                  }
+
+                  return raw as unknown as ApiErrorResponse;
             }
 
             const text = await response.text();
