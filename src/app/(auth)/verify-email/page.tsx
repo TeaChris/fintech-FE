@@ -7,14 +7,21 @@ export const metadata: Metadata = {
       description: 'Check your inbox to verify your BpaY account.',
 }
 
-export default function VerifyEmailPage() {
+export default async function VerifyEmailPage({
+      searchParams,
+}: {
+      searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+      const emailParam = (await searchParams).email
+      const email = typeof emailParam === 'string' ? emailParam : undefined
+
       return (
             <FadeIn direction="up" delay={0.04} className="w-full">
                   <AuthCard
                         title="Check your inbox"
                         className="text-center [&_h3]:text-center"
                   >
-                        <VerifyEmailContent />
+                        <VerifyEmailContent email={email} />
                   </AuthCard>
             </FadeIn>
       )
