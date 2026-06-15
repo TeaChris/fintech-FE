@@ -73,7 +73,22 @@ async function parseJsonResponse(response: Response): Promise<unknown> {
             return null;
       }
 
-      return safeParse(text);
+      const parsed = safeParse(text);
+
+      // Unwrap backend envelope: { success: true, data: T }
+      // The PAY backend wraps all successful responses in this shape.
+      // We extract `data` so Zod schemas validate the actual payload.
+      if (
+            parsed !== null &&
+            typeof parsed === "object" &&
+            "success" in parsed &&
+            (parsed as Record<string, unknown>).success === true &&
+            "data" in parsed
+      ) {
+            return (parsed as Record<string, unknown>).data;
+      }
+
+      return parsed;
 }
 
 /**
