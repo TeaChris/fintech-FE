@@ -1,22 +1,186 @@
-import { cn } from "@/lib/utils";
+'use client'
 
-import type { AuthLayoutProps } from "@/features/auth/types/auth.types";
-import { AuthFooter } from "@/features/auth/components/auth-footer";
-import { AuthNav } from "./auth.nav";
-import { LockKeyhole, ShieldCheck, UserRoundX, Star } from "lucide-react";
+import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
+
+import type { AuthLayoutProps } from '@/features/auth/types/auth.types'
+import { AuthFooter } from '@/features/auth/components/auth-footer'
+import { AuthNav } from './auth.nav'
+import {
+      LockKeyhole,
+      ShieldCheck,
+      UserRoundX,
+      Star,
+      Users,
+      MailCheck,
+      Key,
+      Smartphone,
+      ShieldAlert,
+      type LucideIcon,
+} from 'lucide-react'
 
 const TRUST_ITEMS = [
-      { icon: LockKeyhole, label: "256-bit encryption" },
-      { icon: ShieldCheck, label: "SOC 2 Type II compliant" },
-      { icon: UserRoundX, label: "Your data is never shared" },
-] as const;
+      { icon: LockKeyhole, label: '256-bit encryption' },
+      { icon: ShieldCheck, label: 'SOC 2 Type II compliant' },
+      { icon: UserRoundX, label: 'Your data is never shared' },
+] as const
 
 const FOOTER_TRUST_ITEMS = [
-      { icon: LockKeyhole, label: "256-bit encryption" },
-      { icon: ShieldCheck, label: "SOC 2 Type II compliant" },
-] as const;
+      { icon: LockKeyhole, label: '256-bit encryption' },
+      { icon: ShieldCheck, label: 'SOC 2 Type II compliant' },
+] as const
+
+type AuthContentConfig = {
+      left: {
+            icon: LucideIcon;
+            title: string;
+            description: string;
+      };
+      right: {
+            quote: string;
+            author: string;
+            company: string;
+      };
+};
+
+const AUTH_CONTENT: Record<string, AuthContentConfig> = {
+      '/sign-in': {
+            left: {
+                  icon: ShieldCheck,
+                  title: 'Secure. Private. Reliable.',
+                  description:
+                        'Your security is our priority. All data is encrypted and protected.',
+            },
+            right: {
+                  quote: 'BpaY gives us the confidence that our payments and data are in safe hands.',
+                  author: 'Finance team',
+                  company: 'Acme Inc.',
+            },
+      },
+      '/sign-up': {
+            left: {
+                  icon: Users,
+                  title: 'Welcome to BpaY.',
+                  description:
+                        'Join thousands of businesses managing their finances seamlessly and securely.',
+            },
+            right: {
+                  quote: "Setting up our accounts with BpaY took minutes, and we haven't looked back since.",
+                  author: 'Sarah J.',
+                  company: 'CEO of TechStart',
+            },
+      },
+      '/verify-email': {
+            left: {
+                  icon: MailCheck,
+                  title: 'Check your inbox.',
+                  description:
+                        'We verify emails to prevent fraud and keep your account fully secure.',
+            },
+            right: {
+                  quote: 'Their verification process is quick and gives me peace of mind about my account.',
+                  author: 'Alex T.',
+                  company: 'Freelancer',
+            },
+      },
+      '/email-verified': {
+            left: {
+                  icon: MailCheck,
+                  title: "You're all set.",
+                  description:
+                        'Your email is verified. Access all features of your BpaY account securely.',
+            },
+            right: {
+                  quote: 'The onboarding was flawless. I felt secure from the very first step.',
+                  author: 'Jessica M.',
+                  company: 'Boutique Owner',
+            },
+      },
+      '/forgot-password': {
+            left: {
+                  icon: Key,
+                  title: 'Account Recovery.',
+                  description:
+                        'Regain access to your account quickly and securely without hassle.',
+            },
+            right: {
+                  quote: 'I forgot my password but recovering my account was incredibly smooth and secure.',
+                  author: 'Michael R.',
+                  company: 'Merchant',
+            },
+      },
+      '/reset-password': {
+            left: {
+                  icon: Key,
+                  title: 'Create new password.',
+                  description:
+                        'Ensure your new password is strong to keep your finances protected.',
+            },
+            right: {
+                  quote: 'The password reset process was straightforward and made me feel my data is safe.',
+                  author: 'David L.',
+                  company: 'E-commerce Seller',
+            },
+      },
+      '/password-updated': {
+            left: {
+                  icon: ShieldCheck,
+                  title: 'Password updated.',
+                  description:
+                        'Your new password is now active. You can safely log back into your account.',
+            },
+            right: {
+                  quote: "BpaY's security measures are top-notch. Resetting my credentials was a breeze.",
+                  author: 'Emma S.',
+                  company: 'Consultant',
+            },
+      },
+      '/mfa': {
+            left: {
+                  icon: Smartphone,
+                  title: 'Multi-Factor Auth.',
+                  description:
+                        'Add an extra layer of protection to your transactions and data.',
+            },
+            right: {
+                  quote: 'The extra security layer ensures no unauthorized access to our company funds.',
+                  author: 'Elena P.',
+                  company: 'Operations Manager',
+            },
+      },
+      '/recovery': {
+            left: {
+                  icon: Smartphone,
+                  title: 'Emergency Access.',
+                  description:
+                        'Use your secure backup codes to bypass MFA when you lose your device.',
+            },
+            right: {
+                  quote: 'Having recovery codes saved me when I lost my phone on a business trip.',
+                  author: 'Robert C.',
+                  company: 'Sales Director',
+            },
+      },
+      '/locked': {
+            left: {
+                  icon: ShieldAlert,
+                  title: 'Security Alert.',
+                  description:
+                        'We actively monitor for suspicious activities to protect your assets.',
+            },
+            right: {
+                  quote: 'Knowing they proactively lock accounts after suspicious attempts lets me sleep at night.',
+                  author: 'David K.',
+                  company: 'Investor',
+            },
+      },
+}
 
 export function AuthLayout({ children }: AuthLayoutProps) {
+      const pathname = usePathname()
+      const content = (AUTH_CONTENT[pathname] || AUTH_CONTENT['/sign-in']) as AuthContentConfig
+      const LeftIcon = content.left.icon
+
       return (
             <div className="flex min-h-svh flex-col bg-background">
                   <AuthNav />
@@ -32,23 +196,21 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                                     {/* Shield icon */}
                                     <div
                                           className={cn(
-                                                "flex h-12 w-12 items-center justify-center rounded-full",
-                                                "border-2 border-accent/30 bg-accent/5",
+                                                'flex h-12 w-12 items-center justify-center rounded-full',
+                                                'border-2 border-accent/30 bg-accent/5',
                                           )}
                                           aria-hidden="true"
                                     >
-                                          <ShieldCheck className="h-6 w-6 text-accent" />
+                                          <LeftIcon className="h-6 w-6 text-accent" />
                                     </div>
 
                                     {/* Heading */}
                                     <div className="flex flex-col gap-1.5">
                                           <h2 className="text-card-title text-foreground">
-                                                Secure. Private. Reliable.
+                                                {content.left.title}
                                           </h2>
                                           <p className="text-body-sm leading-relaxed">
-                                                Your security is our priority.
-                                                All data is encrypted and
-                                                protected.
+                                                {content.left.description}
                                           </p>
                                     </div>
 
@@ -106,14 +268,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                                     {/* Quote */}
                                     <blockquote className="border-0 p-0 m-0 text-sm leading-relaxed text-muted-foreground not-italic">
                                           <p className="mb-3">
-                                                &ldquo;BpaY gives us the
-                                                confidence that our payments and
-                                                data are in safe hands.&rdquo;
+                                                &ldquo;{content.right.quote}
+                                                &rdquo;
                                           </p>
                                           <footer className="text-xs text-muted-foreground">
-                                                — Finance team,{" "}
+                                                — {content.right.author},{' '}
                                                 <cite className="not-italic font-medium text-accent">
-                                                      Acme Inc.
+                                                      {content.right.company}
                                                 </cite>
                                           </footer>
                                     </blockquote>
@@ -158,5 +319,5 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                         <AuthFooter className="justify-center" />
                   </footer>
             </div>
-      );
+      )
 }
