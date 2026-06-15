@@ -11,6 +11,9 @@ import {
       LoginRequestSchema,
       type LoginRequest,
       type LoginResponse,
+      RegisterRequestSchema,
+      type RegisterRequest,
+      type RegisterResponse,
 } from '@/api/sdk/auth/auth.api'
 /**
  * Server Action result — discriminated union for client consumption.
@@ -82,6 +85,86 @@ export async function signInAction(
 
             // 4. Extract and forward cookies to the client
             // Node 18+ Headers API provides `getSetCookie()` to cleanly extract all Set-Cookie values
+            const setCookieHeaders = response.headers.getSetCookie
+                  ? response.headers.getSetCookie()
+                  : []
+
+            if (setCookieHeaders.length > 0) {
+                  const parsedCookies = setCookieParser.parse(setCookieHeaders)
+                  const cookieStore = await cookies()
+
+                  for (const cookie of parsedCookies) {
+                        cookieStore.set(cookie.name, cookie.value, {
+                              path: cookie.path ?? '/',
+                              httpOnly: cookie.httpOnly ?? true,
+                              secure: cookie.secure ?? true,
+                              sameSite: cookie.sameSite as
+                                    | 'lax'
+                                    | 'strict'
+                                    | 'none'
+                                    | undefined,
+                              domain: cookie.domain,
+                              expires: cookie.expires,
+                              maxAge: cookie.maxAge,
+                        })
+                  }
+            }
+
+            // 5. Return success result
+            return { success: true, data: response.data }
+      } catch (error) {
+            // Map errors to user-friendly messages
+            if (isValidationError(error)) {
+                  return {
+                        success: false,
+                        error: error.message,
+                        fieldErrors: error.fieldErrors,
+                  }
+            }
+
+            if (isApiError(error)) {
+                  return {
+                        success: false,
+                        error: error.message,
+                  }
+            }
+
+            return {
+                  success: false,
+                  error: 'An unexpected error occurred. Please try again.',
+            }
+      }
+}
+
+/**
+ * Register a new user via Server Action.
+ */
+export async function signUpAction(
+      payload: RegisterRequest,
+): Promise<ActionResult<RegisterResponse>> {
+      try {
+            // 1. CSRF validation
+            const originValid = await validateOrigin()
+            if (!originValid) {
+                  return {
+                        success: false,
+                        error: 'Invalid request origin. Please try again.',
+                  }
+            }
+
+            // 2. Validate payload on the server
+            const validatedPayload = validatePayload(
+                  RegisterRequestSchema,
+                  payload,
+            )
+
+            // 3. Call backend using Server Client
+            const client = await createServerClient()
+            const authApi = createAuthApi(client)
+
+            const response = await authApi.register(validatedPayload)
+
+            // 4. Extract and forward cookies to the client (registration may auto-login and return cookies)
             const setCookieHeaders = response.headers.getSetCookie
                   ? response.headers.getSetCookie()
                   : []
