@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MailOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function VerifyEmailContent() {
+export function VerifyEmailContent({ email }: { email?: string }) {
       return (
             <div className="flex flex-col items-center text-center gap-6" aria-label="Verify email content">
                   <div className="flex items-center justify-center size-16 rounded-full bg-accent/10 text-accent mb-2">
@@ -12,7 +12,7 @@ export function VerifyEmailContent() {
                   <div className="space-y-2">
                         <p className="text-[0.9375rem] text-muted-foreground leading-relaxed">
                               We&apos;ve sent a verification link to<br/>
-                              <strong className="text-foreground font-medium">john@example.com</strong>
+                              <strong className="text-foreground font-medium">{email ?? "your email"}</strong>
                         </p>
                         <p className="text-[0.9375rem] text-muted-foreground leading-relaxed">
                               Click the link in the email to verify<br/>
