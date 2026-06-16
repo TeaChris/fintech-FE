@@ -1,4 +1,5 @@
 import { useState, useTransition } from 'react'
+
 import { useRouter } from 'next/navigation'
 import { signUpAction } from '../actions/auth.actions'
 import type { RegisterRequest } from '@/api/sdk/auth/auth.api'
@@ -20,8 +21,10 @@ export function useSignUp() {
 
                   if (result.success) {
                         // Redirect to email verification or dashboard
-                        const query = new URLSearchParams({ email: payload.email }).toString();
-                        router.push(`/verify-email?${query}`);
+                        const query = new URLSearchParams({
+                              email: payload.email,
+                        }).toString()
+                        router.push(`/verify-email?${query}`)
                   } else {
                         setError(result.error)
                         if (result.fieldErrors) {
