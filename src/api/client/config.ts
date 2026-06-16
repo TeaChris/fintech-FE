@@ -84,7 +84,13 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
       csrfCookieName: "XSRF-TOKEN",
       csrfHeaderName: "X-XSRF-TOKEN",
       refreshEndpoint: "/auth/refresh",
-      publicPaths: ["/auth/login", "/auth/register", "/auth/forgot-password"],
+      publicPaths: [
+            "/auth/login",
+            "/auth/register",
+            "/auth/verify-email",
+            "/auth/request-password-reset",
+            "/auth/reset-password",
+      ],
       onAuthFailure: undefined,
 } as const;
 
