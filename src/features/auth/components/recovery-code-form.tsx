@@ -1,23 +1,29 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { KeyRound } from "lucide-react";
+import Link from 'next/link'
+import { KeyRound } from 'lucide-react'
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 
 export function RecoveryCodeForm() {
       return (
-            <div className="flex flex-col items-center gap-7 mt-2" aria-label="Recovery code form">
-                  <div className="flex items-center justify-center size-16 rounded-full bg-accent/10 text-accent mb-[-0.5rem]">
+            <div
+                  className="flex flex-col items-center gap-7 mt-2"
+                  aria-label="Recovery code form"
+            >
+                  <div className="flex items-center justify-center size-16 rounded-full bg-accent/10 text-accent -mb-2">
                         <KeyRound className="size-8" />
                   </div>
-                  
+
                   <form className="flex flex-col gap-6 w-full">
                         <FieldGroup>
                               <Field>
-                                    <FieldLabel htmlFor="recovery-code" className="sr-only">
+                                    <FieldLabel
+                                          htmlFor="recovery-code"
+                                          className="sr-only"
+                                    >
                                           Recovery code
                                     </FieldLabel>
                                     <Input
@@ -40,9 +46,12 @@ export function RecoveryCodeForm() {
                         </Button>
                   </form>
 
-                  <Link href="/sign-in" className="text-sm font-medium text-accent hover:underline underline-offset-4">
+                  <Link
+                        href="/sign-in"
+                        className="text-sm font-medium text-accent hover:underline underline-offset-4"
+                  >
                         Back to sign in
                   </Link>
             </div>
-      );
+      )
 }
