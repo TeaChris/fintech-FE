@@ -22,36 +22,39 @@
 
 import type {
       ApiClient,
-      ApiClientConfig,
-      ApiRequestConfig,
       ApiResponse,
       RequestContext,
-} from "@/api/types";
+      ApiClientConfig,
+      ApiRequestConfig,
+} from '@/api/types'
 
-import { createApiClientConfig } from "./config";
 import {
       mapResponseToError,
       NetworkError,
       // isAuthError,
-} from "./errors";
-import { noopLogger } from "./logging";
+} from './errors'
+
 import {
-      generateRequestId,
-      generateCorrelationId,
       getTimestamp,
+      generateRequestId,
       calculateDuration,
-} from "./tracing";
-import { createTimeoutController } from "./timeout";
-import { executeWithRetry } from "./retry";
+      generateCorrelationId,
+} from './tracing'
+
 import {
-      createAuthCoordinator,
       createRefreshFn,
       shouldAttemptRefresh,
-} from "./auth";
-import { composeMiddleware, buildMiddlewarePipeline } from "./middleware";
-import { buildRequestUrl, buildFetchInit } from "./request";
-import { buildApiResponse } from "./response";
-import { resolveIdempotencyKey } from "./idempotency";
+      createAuthCoordinator,
+} from './auth'
+
+import { noopLogger } from './logging'
+import { executeWithRetry } from './retry'
+import { buildApiResponse } from './response'
+import { createApiClientConfig } from './config'
+import { createTimeoutController } from './timeout'
+import { resolveIdempotencyKey } from './idempotency'
+import { buildRequestUrl, buildFetchInit } from './request'
+import { composeMiddleware, buildMiddlewarePipeline } from './middleware'
 
 // ---------------------------------------------------------------------------
 // Request Deduplication
@@ -62,10 +65,10 @@ import { resolveIdempotencyKey } from "./idempotency";
  * If the same GET URL is requested multiple times simultaneously,
  * only one actual fetch is made and all callers share the result.
  */
-type InflightCache = Map<string, Promise<Response>>;
+type InflightCache = Map<string, Promise<Response>>
 
 function createInflightCache(): InflightCache {
-      return new Map();
+      return new Map()
 }
 
 /**
@@ -73,7 +76,7 @@ function createInflightCache(): InflightCache {
  * Based on method + URL (query params included).
  */
 function dedupeKey(method: string, url: string): string {
-      return `${method}:${url}`;
+      return `${method}:${url}`
 }
 
 // ---------------------------------------------------------------------------
@@ -107,18 +110,18 @@ export function createApiClient(
       overrides: Partial<ApiClientConfig> = {},
 ): ApiClient {
       // Build configuration
-      const config = createApiClientConfig(overrides);
-      const logger = config.logger ?? noopLogger;
+      const config = createApiClientConfig(overrides)
+      const logger = config.logger ?? noopLogger
 
       // Create auth coordinator
-      const refreshFn = createRefreshFn(config.baseUrl, config.auth);
-      const authCoordinator = createAuthCoordinator(config.auth, refreshFn);
+      const refreshFn = createRefreshFn(config.baseUrl, config.auth)
+      const authCoordinator = createAuthCoordinator(config.auth, refreshFn)
 
       // Build middleware pipeline
-      const middlewares = buildMiddlewarePipeline(config, authCoordinator);
+      const middlewares = buildMiddlewarePipeline(config, authCoordinator)
 
       // Deduplication cache for in-flight GET requests
-      const inflightCache = createInflightCache();
+      const inflightCache = createInflightCache()
 
       // -------------------------------------------------------------------------
       // Core Request Executor
@@ -141,8 +144,8 @@ export function createApiClient(
       async function executeRequest<TData>(
             requestConfig: ApiRequestConfig,
       ): Promise<ApiResponse<TData>> {
-            const correlationId = generateCorrelationId();
-            const startTime = getTimestamp();
+            const correlationId = generateCorrelationId()
+            const startTime = getTimestamp()
 
             // Pre-generate idempotency key outside the retry loop.
             // This ensures the SAME key is reused across all retry attempts,
@@ -150,12 +153,12 @@ export function createApiClient(
             const idempotencyKey = resolveIdempotencyKey(
                   requestConfig.method,
                   requestConfig.idempotencyKey,
-            );
+            )
 
             // Wrap in retry engine
             return executeWithRetry(
                   async (attempt) => {
-                        const requestId = generateRequestId();
+                        const requestId = generateRequestId()
 
                         // Build request context
                         const context: RequestContext = {
@@ -170,7 +173,7 @@ export function createApiClient(
                                           ? { idempotencyKey }
                                           : {}),
                               },
-                        };
+                        }
 
                         // Build the full URL
                         const url = buildRequestUrl(
@@ -178,13 +181,13 @@ export function createApiClient(
                               requestConfig.path,
                               requestConfig.params,
                               requestConfig.query,
-                        );
+                        )
 
                         // Create timeout controller
                         const timeout = createTimeoutController(
                               requestConfig.timeout ?? config.timeout,
                               requestConfig.signal,
-                        );
+                        )
 
                         try {
                               // Build the middleware pipeline with the fetch as the terminal handler
@@ -195,50 +198,50 @@ export function createApiClient(
                                           const init = buildFetchInit(
                                                 ctx,
                                                 timeout.signal,
-                                          );
+                                          )
 
                                           // Deduplication for GET requests
-                                          if (requestConfig.method === "GET") {
+                                          if (requestConfig.method === 'GET') {
                                                 const key = dedupeKey(
-                                                      "GET",
+                                                      'GET',
                                                       url,
-                                                );
+                                                )
                                                 const inflight =
-                                                      inflightCache.get(key);
+                                                      inflightCache.get(key)
 
                                                 if (inflight) {
                                                       // Clone the response so each caller gets their own body
                                                       return (
                                                             await inflight
-                                                      ).clone();
+                                                      ).clone()
                                                 }
 
                                                 const fetchPromise = fetch(
                                                       url,
                                                       init,
                                                 ).finally(() => {
-                                                      inflightCache.delete(key);
-                                                });
+                                                      inflightCache.delete(key)
+                                                })
 
                                                 inflightCache.set(
                                                       key,
                                                       fetchPromise,
-                                                );
-                                                return fetchPromise;
+                                                )
+                                                return fetchPromise
                                           }
 
-                                          return fetch(url, init);
+                                          return fetch(url, init)
                                     },
-                              );
+                              )
 
                               // Execute the pipeline
-                              const response = await pipeline(context);
+                              const response = await pipeline(context)
 
                               // Clear timeout on successful response
-                              timeout.clear();
+                              timeout.clear()
 
                               // Calculate duration
-                              const durationMs = calculateDuration(startTime);
+                              const durationMs = calculateDuration(startTime)
 
                               // Handle non-2xx responses
                               if (!response.ok) {
@@ -249,7 +252,7 @@ export function createApiClient(
                                           url,
                                           retryCount: attempt,
                                           durationMs,
-                                    };
+                                    }
 
                                     // Check for 401 and attempt auth refresh
                                     if (
@@ -260,14 +263,14 @@ export function createApiClient(
                                           )
                                     ) {
                                           const refreshed =
-                                                await authCoordinator.handleUnauthorized();
+                                                await authCoordinator.handleUnauthorized()
                                           if (refreshed) {
                                                 // Auth refreshed — re-execute the request directly.
                                                 // We bypass the retry engine because AuthError is not retryable
                                                 // by design (prevents infinite refresh loops).
                                                 return executeRequest<TData>(
                                                       requestConfig,
-                                                );
+                                                )
                                           }
                                     }
 
@@ -275,14 +278,14 @@ export function createApiClient(
                                     throw await mapResponseToError(
                                           response,
                                           errorContext,
-                                    );
+                                    )
                               }
 
                               // Build and return the normalized response
                               return buildApiResponse<TData>(
                                     response,
                                     requestConfig.schema as
-                                          | import("zod").ZodType<TData>
+                                          | import('zod').ZodType<TData>
                                           | undefined,
                                     requestConfig.responseType,
                                     {
@@ -294,16 +297,16 @@ export function createApiClient(
                                           method: requestConfig.method,
                                           durationMs,
                                     },
-                              );
+                              )
                         } catch (error) {
-                              timeout.clear();
+                              timeout.clear()
 
                               // Wrap raw fetch errors as NetworkError
                               if (
                                     error instanceof TypeError &&
-                                    (error.message.includes("fetch") ||
-                                          error.message.includes("network") ||
-                                          error.message.includes("Failed"))
+                                    (error.message.includes('fetch') ||
+                                          error.message.includes('network') ||
+                                          error.message.includes('Failed'))
                               ) {
                                     throw new NetworkError(
                                           `Network error: ${error.message}`,
@@ -319,10 +322,10 @@ export function createApiClient(
                                                             startTime,
                                                       ),
                                           },
-                                    );
+                                    )
                               }
 
-                              throw error;
+                              throw error
                         }
                   },
                   requestConfig.retry ?? config.retry,
@@ -332,7 +335,7 @@ export function createApiClient(
                         isFinancialMutation: requestConfig.isFinancialMutation,
                         onRetry: (attempt, error, delayMs) => {
                               logger.warn({
-                                    level: "warn",
+                                    level: 'warn',
                                     message: `Retrying request (attempt ${attempt})`,
                                     timestamp: new Date().toISOString(),
                                     requestId: correlationId,
@@ -342,13 +345,13 @@ export function createApiClient(
                                     error:
                                           error instanceof Error
                                                 ? error.message
-                                                : "Unknown",
+                                                : 'Unknown',
                                     retryCount: attempt,
                                     durationMs: delayMs,
-                              });
+                              })
                         },
                   },
-            );
+            )
       }
 
       // -------------------------------------------------------------------------
@@ -360,70 +363,70 @@ export function createApiClient(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig,
-                        "method" | "path" | "body"
+                        'method' | 'path' | 'body'
                   >,
             ): Promise<ApiResponse<TData>> {
                   return executeRequest<TData>({
                         ...requestConfig,
-                        method: "GET",
+                        method: 'GET',
                         path,
-                  });
+                  })
             },
 
             post<TData, TBody = unknown>(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig<TBody>,
-                        "method" | "path"
+                        'method' | 'path'
                   >,
             ): Promise<ApiResponse<TData>> {
                   return executeRequest<TData>({
                         ...requestConfig,
-                        method: "POST",
+                        method: 'POST',
                         path,
-                  });
+                  })
             },
 
             put<TData, TBody = unknown>(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig<TBody>,
-                        "method" | "path"
+                        'method' | 'path'
                   >,
             ): Promise<ApiResponse<TData>> {
                   return executeRequest<TData>({
                         ...requestConfig,
-                        method: "PUT",
+                        method: 'PUT',
                         path,
-                  });
+                  })
             },
 
             patch<TData, TBody = unknown>(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig<TBody>,
-                        "method" | "path"
+                        'method' | 'path'
                   >,
             ): Promise<ApiResponse<TData>> {
                   return executeRequest<TData>({
                         ...requestConfig,
-                        method: "PATCH",
+                        method: 'PATCH',
                         path,
-                  });
+                  })
             },
 
             del<TData>(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig,
-                        "method" | "path" | "body"
+                        'method' | 'path' | 'body'
                   >,
             ): Promise<ApiResponse<TData>> {
                   return executeRequest<TData>({
                         ...requestConfig,
-                        method: "DELETE",
+                        method: 'DELETE',
                         path,
-                  });
+                  })
             },
 
             upload<TData>(
@@ -431,45 +434,45 @@ export function createApiClient(
                   formData: FormData,
                   requestConfig?: Omit<
                         ApiRequestConfig,
-                        "method" | "path" | "body"
+                        'method' | 'path' | 'body'
                   >,
             ): Promise<ApiResponse<TData>> {
                   return executeRequest<TData>({
                         ...requestConfig,
-                        method: "POST",
+                        method: 'POST',
                         path,
                         body: formData,
-                  });
+                  })
             },
 
             download(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig,
-                        "method" | "path" | "body" | "responseType"
+                        'method' | 'path' | 'body' | 'responseType'
                   >,
             ): Promise<ApiResponse<Blob>> {
                   return executeRequest<Blob>({
                         ...requestConfig,
-                        method: "GET",
+                        method: 'GET',
                         path,
-                        responseType: "blob",
-                  });
+                        responseType: 'blob',
+                  })
             },
 
             stream(
                   path: string,
                   requestConfig?: Omit<
                         ApiRequestConfig,
-                        "method" | "path" | "body" | "responseType"
+                        'method' | 'path' | 'body' | 'responseType'
                   >,
             ): Promise<ApiResponse<ReadableStream<Uint8Array>>> {
                   return executeRequest<ReadableStream<Uint8Array>>({
                         ...requestConfig,
-                        method: "GET",
+                        method: 'GET',
                         path,
-                        responseType: "stream",
-                  });
+                        responseType: 'stream',
+                  })
             },
-      };
+      }
 }
