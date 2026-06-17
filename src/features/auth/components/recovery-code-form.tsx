@@ -3,9 +3,7 @@
 import Link from 'next/link'
 import { KeyRound } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Button, Input, Field, FieldGroup, FieldLabel } from '@/components'
 
 export function RecoveryCodeForm() {
       return (
