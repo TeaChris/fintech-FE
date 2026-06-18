@@ -24,33 +24,33 @@ This project follows a standard [Contributor Covenant](https://www.contributor-c
 
 1. **Fork** the repository and clone your fork locally.
 2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
+      ```bash
+      pnpm install
+      ```
 3. **Copy the environment template:**
-   ```bash
-   cp .env.example .env.local
-   ```
+      ```bash
+      cp .env.example .env.local
+      ```
 4. **Verify your setup:**
-   ```bash
-   pnpm typecheck    # Must pass with zero errors
-   pnpm test         # Must pass all 56+ tests
-   pnpm lint         # Must have no lint errors
-   ```
+      ```bash
+      pnpm typecheck    # Must pass with zero errors
+      pnpm test         # Must pass all 56+ tests
+      pnpm lint         # Must have no lint errors
+      ```
 
 ---
 
 ## Development Workflow
 
 1. Create a feature branch from `main`:
-   ```bash
-   git checkout -b feat/your-feature-name
-   ```
+      ```bash
+      git checkout -b feat/your-feature-name
+      ```
 2. Make your changes following the [Architecture Rules](#architecture-rules).
 3. Run all checks before committing:
-   ```bash
-   pnpm typecheck && pnpm lint && pnpm test
-   ```
+      ```bash
+      pnpm typecheck && pnpm lint && pnpm test
+      ```
 4. Commit using the [Conventional Commits](#commit-convention) format.
 5. Push your branch and open a Pull Request.
 
@@ -70,19 +70,19 @@ This project enforces [Conventional Commits](https://www.conventionalcommits.org
 
 ### Allowed Types
 
-| Type       | Description                                              |
-|------------|----------------------------------------------------------|
-| `feat`     | A new feature                                            |
-| `fix`      | A bug fix                                                |
-| `docs`     | Documentation changes only                               |
-| `style`    | Code style changes (formatting, semicolons, etc.)        |
-| `refactor` | Code changes that neither fix a bug nor add a feature    |
-| `perf`     | Performance improvements                                 |
-| `test`     | Adding or updating tests                                 |
-| `build`    | Changes to the build system or dependencies              |
-| `ci`       | CI/CD pipeline changes                                   |
-| `chore`    | Other changes that don't modify src or test files        |
-| `revert`   | Reverts a previous commit                                |
+| Type       | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| `feat`     | A new feature                                         |
+| `fix`      | A bug fix                                             |
+| `docs`     | Documentation changes only                            |
+| `style`    | Code style changes (formatting, semicolons, etc.)     |
+| `refactor` | Code changes that neither fix a bug nor add a feature |
+| `perf`     | Performance improvements                              |
+| `test`     | Adding or updating tests                              |
+| `build`    | Changes to the build system or dependencies           |
+| `ci`       | CI/CD pipeline changes                                |
+| `chore`    | Other changes that don't modify src or test files     |
+| `revert`   | Reverts a previous commit                             |
 
 ### Examples
 
