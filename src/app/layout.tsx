@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono, Comfortaa } from 'next/font/google'
+import { Geist, Comfortaa } from 'next/font/google'
 import { ApiProvider } from '@/api/hooks'
 import './globals.css'
 
