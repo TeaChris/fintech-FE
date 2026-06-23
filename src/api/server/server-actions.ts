@@ -19,6 +19,7 @@ import { validatePayload } from "@/api/client/validation";
 import type { Transfer, TransferRequest } from "@/api/schemas";
 import { isApiError, isValidationError } from "@/api/client/errors";
 import { TransferSchema, TransferRequestSchema } from "@/api/schemas";
+import { requireAuth } from "@/features/auth/guards/auth.guard";
 
 // ---------------------------------------------------------------------------
 // Transfer Server Action
@@ -102,7 +103,10 @@ export async function createTransferAction(
       payload: TransferRequest,
 ): Promise<ActionResult<Transfer>> {
       try {
-            // 0. CSRF: Validate Origin header for financial mutations
+            // 0. Auth: Reject unauthenticated requests
+            await requireAuth();
+
+            // 1. CSRF: Validate Origin header for financial mutations
             const originValid = await validateOrigin();
             if (!originValid) {
                   return {

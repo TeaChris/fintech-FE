@@ -9,8 +9,8 @@
  */
 
 import type { ApiClient, ApiResponse } from '@/api/types'
-import { z } from 'zod'
 import type { ZodType } from 'zod'
+import { z } from 'zod'
 
 // ---------------------------------------------------------------------------
 // Shared Schemas
@@ -121,8 +121,8 @@ export type AuthUser = z.infer<typeof AuthUserSchema>
 // ---------------------------------------------------------------------------
 
 export const MfaSetupResponseSchema = z.object({
-      qrCodeDataUrl: z.string(),
       secret: z.string(),
+      qrCodeDataUrl: z.string(),
       recoveryCodes: z.array(z.string()),
 })
 export type MfaSetupResponse = z.infer<typeof MfaSetupResponseSchema>
@@ -145,13 +145,13 @@ export type MfaDisableRequest = z.infer<typeof MfaDisableRequestSchema>
 
 export const SessionInfoSchema = z.object({
       id: z.string(),
-      deviceName: z.string().nullable(),
-      deviceType: z.string().nullable(),
+      current: z.boolean(),
       ipAddress: z.string().nullable(),
       userAgent: z.string().nullable(),
-      lastActiveAt: z.string().or(z.date()),
+      deviceName: z.string().nullable(),
+      deviceType: z.string().nullable(),
       createdAt: z.string().or(z.date()),
-      current: z.boolean(),
+      lastActiveAt: z.string().or(z.date()),
 })
 export type SessionInfo = z.infer<typeof SessionInfoSchema>
 
@@ -170,11 +170,17 @@ export interface AuthApi {
       getProfile(): Promise<ApiResponse<AuthUser>>
 
       // Email verification
-      verifyEmail(data: VerifyEmailRequest): Promise<ApiResponse<MessageResponse>>
+      verifyEmail(
+            data: VerifyEmailRequest,
+      ): Promise<ApiResponse<MessageResponse>>
 
       // Password reset
-      forgotPassword(data: ForgotPasswordRequest): Promise<ApiResponse<MessageResponse>>
-      resetPassword(data: ResetPasswordRequest): Promise<ApiResponse<MessageResponse>>
+      forgotPassword(
+            data: ForgotPasswordRequest,
+      ): Promise<ApiResponse<MessageResponse>>
+      resetPassword(
+            data: ResetPasswordRequest,
+      ): Promise<ApiResponse<MessageResponse>>
 
       // MFA
       mfaSetup(): Promise<ApiResponse<MfaSetupResponse>>
@@ -269,7 +275,9 @@ export function createAuthApi(client: ApiClient): AuthApi {
             // ── Sessions ───────────────────────────────────────────────
             getSessions: () =>
                   client.get<SessionInfo[]>('/auth/sessions', {
-                        schema: z.array(SessionInfoSchema) as unknown as ZodType,
+                        schema: z.array(
+                              SessionInfoSchema,
+                        ) as unknown as ZodType,
                   }),
 
             revokeSession: (id: string) =>

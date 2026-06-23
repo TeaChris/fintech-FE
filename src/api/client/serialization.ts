@@ -19,46 +19,46 @@
  * Used by the reviver to prevent accidental number parsing.
  */
 const MONEY_FIELD_PATTERNS = new Set([
-  'amount',
-  'balance',
-  'total',
-  'subtotal',
-  'fee',
-  'tax',
-  'price',
-  'cost',
-  'credit',
-  'debit',
-  'interest',
-  'principal',
-  'payment',
-  'charge',
-  'refund',
-  'limit',
-  'available_balance',
-  'ledger_balance',
-  'pending_balance',
-]);
+      'fee',
+      'tax',
+      'cost',
+      'total',
+      'limit',
+      'price',
+      'debit',
+      'amount',
+      'charge',
+      'credit',
+      'refund',
+      'payment',
+      'balance',
+      'interest',
+      'subtotal',
+      'principal',
+      'ledger_balance',
+      'pending_balance',
+      'available_balance',
+])
 
 /**
  * Check if a JSON key likely represents a monetary value.
  * Uses exact match and suffix matching (e.g. 'totalAmount').
  */
 function isMoneyField(key: string): boolean {
-  const lowerKey = key.toLowerCase();
+      const lowerKey = key.toLowerCase()
 
-  if (MONEY_FIELD_PATTERNS.has(lowerKey)) {
-    return true;
-  }
+      if (MONEY_FIELD_PATTERNS.has(lowerKey)) {
+            return true
+      }
 
-  // Check suffixes like 'totalAmount', 'feeAmount'
-  for (const pattern of MONEY_FIELD_PATTERNS) {
-    if (lowerKey.endsWith(pattern)) {
-      return true;
-    }
-  }
+      // Check suffixes like 'totalAmount', 'feeAmount'
+      for (const pattern of MONEY_FIELD_PATTERNS) {
+            if (lowerKey.endsWith(pattern)) {
+                  return true
+            }
+      }
 
-  return false;
+      return false
 }
 
 // ---------------------------------------------------------------------------
@@ -74,15 +74,15 @@ function isMoneyField(key: string): boolean {
  * Does NOT convert money strings to numbers.
  */
 export function safeReplacer(_key: string, value: unknown): unknown {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  }
+      if (typeof value === 'bigint') {
+            return value.toString()
+      }
 
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
+      if (value instanceof Date) {
+            return value.toISOString()
+      }
 
-  return value;
+      return value
 }
 
 /**
@@ -90,7 +90,7 @@ export function safeReplacer(_key: string, value: unknown): unknown {
  * Ensures BigInt and Date values are properly serialized.
  */
 export function safeStringify(value: unknown): string {
-  return JSON.stringify(value, safeReplacer);
+      return JSON.stringify(value, safeReplacer)
 }
 
 // ---------------------------------------------------------------------------
@@ -98,7 +98,8 @@ export function safeStringify(value: unknown): string {
 // ---------------------------------------------------------------------------
 
 /** ISO 8601 date regex for reviver detection */
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
+const ISO_DATE_REGEX =
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
 /**
  * Custom JSON reviver that:
@@ -110,20 +111,20 @@ const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}
  * conversion if a backend ever sends numbers.
  */
 export function safeReviver(key: string, value: unknown): unknown {
-  // If it's a number and the key is a money field, convert to string
-  if (typeof value === 'number' && isMoneyField(key)) {
-    return value.toString();
-  }
+      // If it's a number and the key is a money field, convert to string
+      if (typeof value === 'number' && isMoneyField(key)) {
+            return value.toString()
+      }
 
-  // Convert ISO date strings to Date objects
-  if (typeof value === 'string' && ISO_DATE_REGEX.test(value)) {
-    const date = new Date(value);
-    if (!isNaN(date.getTime())) {
-      return date;
-    }
-  }
+      // Convert ISO date strings to Date objects
+      if (typeof value === 'string' && ISO_DATE_REGEX.test(value)) {
+            const date = new Date(value)
+            if (!isNaN(date.getTime())) {
+                  return date
+            }
+      }
 
-  return value;
+      return value
 }
 
 /**
@@ -137,15 +138,15 @@ export function safeReviver(key: string, value: unknown): unknown {
  * `"amount": "1234567890"`.
  */
 function preserveMoneyFieldPrecision(jsonText: string): string {
-  // Build a regex alternation from MONEY_FIELD_PATTERNS
-  const fieldNames = Array.from(MONEY_FIELD_PATTERNS).join('|');
-  // Match: "fieldName" : <number> (with optional whitespace)
-  // Captures the field name and the numeric value
-  const pattern = new RegExp(
-    `("(?:${fieldNames})"\\s*:\\s*)(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)`,
-    'gi',
-  );
-  return jsonText.replace(pattern, '$1"$2"');
+      // Build a regex alternation from MONEY_FIELD_PATTERNS
+      const fieldNames = Array.from(MONEY_FIELD_PATTERNS).join('|')
+      // Match: "fieldName" : <number> (with optional whitespace)
+      // Captures the field name and the numeric value
+      const pattern = new RegExp(
+            `("(?:${fieldNames})"\\s*:\\s*)(\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)`,
+            'gi',
+      )
+      return jsonText.replace(pattern, '$1"$2"')
 }
 
 /**
@@ -158,8 +159,8 @@ function preserveMoneyFieldPrecision(jsonText: string): string {
  * 2. Parse: standard reviver handles dates and remaining conversions
  */
 export function safeParse(text: string): unknown {
-  const sanitized = preserveMoneyFieldPrecision(text);
-  return JSON.parse(sanitized, safeReviver);
+      const sanitized = preserveMoneyFieldPrecision(text)
+      return JSON.parse(sanitized, safeReviver)
 }
 
 // ---------------------------------------------------------------------------
@@ -179,42 +180,45 @@ export function safeParse(text: string): unknown {
  * - null/undefined → no body
  */
 export function serializeBody(body: unknown): {
-  serialized: BodyInit | null;
-  contentType: string | null;
+      serialized: BodyInit | null
+      contentType: string | null
 } {
-  if (body === null || body === undefined) {
-    return { serialized: null, contentType: null };
-  }
+      if (body === null || body === undefined) {
+            return { serialized: null, contentType: null }
+      }
 
-  // FormData — let the browser set the correct multipart boundary
-  if (body instanceof FormData) {
-    return { serialized: body, contentType: null };
-  }
+      // FormData — let the browser set the correct multipart boundary
+      if (body instanceof FormData) {
+            return { serialized: body, contentType: null }
+      }
 
-  // Blob — use its type or default to octet-stream
-  if (body instanceof Blob) {
-    return {
-      serialized: body,
-      contentType: body.type || 'application/octet-stream',
-    };
-  }
+      // Blob — use its type or default to octet-stream
+      if (body instanceof Blob) {
+            return {
+                  serialized: body,
+                  contentType: body.type || 'application/octet-stream',
+            }
+      }
 
-  // ReadableStream — streaming upload
-  if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) {
-    return {
-      serialized: body as unknown as BodyInit,
-      contentType: 'application/octet-stream',
-    };
-  }
+      // ReadableStream — streaming upload
+      if (
+            typeof ReadableStream !== 'undefined' &&
+            body instanceof ReadableStream
+      ) {
+            return {
+                  serialized: body as unknown as BodyInit,
+                  contentType: 'application/octet-stream',
+            }
+      }
 
-  // String — pass through
-  if (typeof body === 'string') {
-    return { serialized: body, contentType: 'text/plain' };
-  }
+      // String — pass through
+      if (typeof body === 'string') {
+            return { serialized: body, contentType: 'text/plain' }
+      }
 
-  // Object/Array — JSON serialize with money safety
-  return {
-    serialized: safeStringify(body),
-    contentType: 'application/json',
-  };
+      // Object/Array — JSON serialize with money safety
+      return {
+            serialized: safeStringify(body),
+            contentType: 'application/json',
+      }
 }

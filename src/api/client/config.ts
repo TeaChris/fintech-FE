@@ -12,32 +12,32 @@
  * - All defaults are conservative (long timeouts, limited retries)
  */
 
-import type { ApiClientConfig, AuthConfig, RetryConfig } from "@/api/types";
+import type { ApiClientConfig, AuthConfig, RetryConfig } from '@/api/types'
 
 // ---------------------------------------------------------------------------
 // Runtime Detection
 // ---------------------------------------------------------------------------
 
-type RuntimeEnvironment = "browser" | "server" | "edge";
+type RuntimeEnvironment = 'browser' | 'server' | 'edge'
 
 /**
  * Detect the current runtime environment.
  * Edge runtime is identified by the NEXT_RUNTIME env var.
  */
 export function detectRuntime(): RuntimeEnvironment {
-      if (typeof window !== "undefined") {
-            return "browser";
+      if (typeof window !== 'undefined') {
+            return 'browser'
       }
 
       // Next.js sets this in Edge runtime contexts
       if (
-            typeof process !== "undefined" &&
-            process.env.NEXT_RUNTIME === "edge"
+            typeof process !== 'undefined' &&
+            process.env.NEXT_RUNTIME === 'edge'
       ) {
-            return "edge";
+            return 'edge'
       }
 
-      return "server";
+      return 'server'
 }
 
 // ---------------------------------------------------------------------------
@@ -54,16 +54,16 @@ export function detectRuntime(): RuntimeEnvironment {
  * requests to be relative to the current origin.
  */
 export function resolveBaseUrl(runtime: RuntimeEnvironment): string {
-      if (runtime === "browser") {
-            return process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+      if (runtime === 'browser') {
+            return process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
       }
 
       // Server and Edge can access private env vars
       return (
             process.env.API_BASE_URL ??
             process.env.NEXT_PUBLIC_API_BASE_URL ??
-            ""
-      );
+            ''
+      )
 }
 
 // ---------------------------------------------------------------------------
@@ -77,24 +77,24 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
       jitterFactor: 0.3,
       retryOnNetworkError: true,
       retryableStatuses: [408, 429, 500, 502, 503, 504],
-} as const;
+} as const
 
 export const DEFAULT_AUTH_CONFIG: AuthConfig = {
-      refreshMethod: "POST",
-      csrfCookieName: "XSRF-TOKEN",
-      csrfHeaderName: "X-XSRF-TOKEN",
-      refreshEndpoint: "/auth/refresh",
+      refreshMethod: 'POST',
+      csrfCookieName: 'XSRF-TOKEN',
+      csrfHeaderName: 'X-XSRF-TOKEN',
+      refreshEndpoint: '/auth/refresh',
       publicPaths: [
-            "/auth/login",
-            "/auth/register",
-            "/auth/verify-email",
-            "/auth/request-password-reset",
-            "/auth/reset-password",
+            '/auth/login',
+            '/auth/register',
+            '/auth/verify-email',
+            '/auth/reset-password',
+            '/auth/request-password-reset',
       ],
       onAuthFailure: undefined,
-} as const;
+} as const
 
-export const DEFAULT_TIMEOUT_MS = 30_000;
+export const DEFAULT_TIMEOUT_MS = 30_000
 
 // ---------------------------------------------------------------------------
 // Configuration Factory
@@ -107,8 +107,8 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
 export function createApiClientConfig(
       overrides: Partial<ApiClientConfig> = {},
 ): ApiClientConfig {
-      const runtime = overrides.runtime ?? detectRuntime();
-      const baseUrl = overrides.baseUrl ?? resolveBaseUrl(runtime);
+      const runtime = overrides.runtime ?? detectRuntime()
+      const baseUrl = overrides.baseUrl ?? resolveBaseUrl(runtime)
 
       return {
             baseUrl,
@@ -124,11 +124,11 @@ export function createApiClientConfig(
             middleware: overrides.middleware ?? [],
             logger: overrides.logger,
             defaultHeaders: {
-                  Accept: "application/json",
+                  Accept: 'application/json',
                   ...overrides.defaultHeaders,
             },
             runtime,
-      };
+      }
 }
 
 // ---------------------------------------------------------------------------
@@ -155,4 +155,4 @@ export const STALE_TIMES = {
 
       /** Static data: feature flags, app config. 30 minutes. */
       STATIC: 30 * 60 * 1_000,
-} as const;
+} as const

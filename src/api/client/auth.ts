@@ -12,9 +12,9 @@
  * - Configurable auth failure callback (e.g. redirect to login)
  */
 
-import type { AuthConfig, HttpMethod } from "@/api/types";
-import { AuthError } from "./errors";
-import { DEFAULT_AUTH_CONFIG } from "./config";
+import { AuthError } from './errors'
+import { DEFAULT_AUTH_CONFIG } from './config'
+import type { AuthConfig, HttpMethod } from '@/api/types'
 
 // ---------------------------------------------------------------------------
 // CSRF Token Extraction
@@ -30,31 +30,31 @@ import { DEFAULT_AUTH_CONFIG } from "./config";
  * Returns `undefined` on server/edge (cookies are forwarded differently).
  */
 export function extractCsrfToken(cookieName: string): string | undefined {
-      if (typeof document === "undefined") {
-            return undefined;
+      if (typeof document === 'undefined') {
+            return undefined
       }
 
-      const cookies = document.cookie.split(";");
-      let token: string | undefined;
+      const cookies = document.cookie.split(';')
+      let token: string | undefined
 
       for (const cookie of cookies) {
-            const [name, ...valueParts] = cookie.trim().split("=");
+            const [name, ...valueParts] = cookie.trim().split('=')
             if (name === cookieName) {
-                  const value = decodeURIComponent(valueParts.join("="));
+                  const value = decodeURIComponent(valueParts.join('='))
                   // Use the LAST matching cookie. Browsers list host-only
                   // cookies before domain cookies, so the last match is
                   // the most specific (host-only) cookie — reducing the
                   // impact of cookie-tossing attacks from sibling subdomains.
-                  token = value;
+                  token = value
             }
       }
 
       // Basic sanity check: CSRF tokens should be non-empty and reasonably sized
       if (token && (token.length < 8 || token.length > 512)) {
-            return undefined;
+            return undefined
       }
 
-      return token;
+      return token
 }
 
 // ---------------------------------------------------------------------------
@@ -67,19 +67,19 @@ export function extractCsrfToken(cookieName: string): string | undefined {
  */
 interface AuthState {
       /** Whether a refresh is currently in progress */
-      refreshInProgress: boolean;
+      refreshInProgress: boolean
 
       /**
        * The refresh promise.
        * All concurrent 401 handlers await this same promise.
        */
-      refreshPromise: Promise<boolean> | null;
+      refreshPromise: Promise<boolean> | null
 
       /** Count of consecutive refresh failures */
-      consecutiveFailures: number;
+      consecutiveFailures: number
 
       /** Maximum consecutive failures before giving up */
-      maxConsecutiveFailures: number;
+      maxConsecutiveFailures: number
 }
 
 // ---------------------------------------------------------------------------
@@ -107,23 +107,23 @@ export interface AuthCoordinator {
        * Returns `true` if refresh succeeded and the request should be retried.
        * Returns `false` if refresh failed (caller should throw AuthError).
        */
-      handleUnauthorized(): Promise<boolean>;
+      handleUnauthorized(): Promise<boolean>
 
       /**
        * Build auth-related headers for a request.
        * Includes CSRF token for non-GET requests.
        */
-      buildAuthHeaders(method: HttpMethod): Record<string, string>;
+      buildAuthHeaders(method: HttpMethod): Record<string, string>
 
       /**
        * Check if a path is public (doesn't require auth).
        */
-      isPublicPath(path: string): boolean;
+      isPublicPath(path: string): boolean
 
       /**
        * Reset the auth state (e.g. on logout).
        */
-      reset(): void;
+      reset(): void
 }
 
 /**
@@ -149,13 +149,13 @@ export function createAuthCoordinator(
             refreshPromise: null,
             consecutiveFailures: 0,
             maxConsecutiveFailures: 3,
-      };
+      }
 
       /**
        * The internal refresh function.
        * Can be set later via `setRefreshFn` to break circular dependencies.
        */
-      const performRefresh: (() => Promise<boolean>) | undefined = refreshFn;
+      const performRefresh: (() => Promise<boolean>) | undefined = refreshFn
 
       /**
        * Execute the token refresh.
@@ -164,22 +164,22 @@ export function createAuthCoordinator(
       async function executeRefresh(): Promise<boolean> {
             if (!performRefresh) {
                   // No refresh function configured — cannot refresh
-                  return false;
+                  return false
             }
 
             try {
-                  const success = await performRefresh();
+                  const success = await performRefresh()
 
                   if (success) {
-                        state.consecutiveFailures = 0;
-                        return true;
+                        state.consecutiveFailures = 0
+                        return true
                   }
 
-                  state.consecutiveFailures++;
-                  return false;
+                  state.consecutiveFailures++
+                  return false
             } catch {
-                  state.consecutiveFailures++;
-                  return false;
+                  state.consecutiveFailures++
+                  return false
             }
       }
 
@@ -190,41 +190,41 @@ export function createAuthCoordinator(
                         state.consecutiveFailures >=
                         state.maxConsecutiveFailures
                   ) {
-                        config.onAuthFailure?.();
-                        return false;
+                        config.onAuthFailure?.()
+                        return false
                   }
 
                   // If a refresh is already in progress, queue behind it
                   if (state.refreshInProgress && state.refreshPromise) {
-                        return state.refreshPromise;
+                        return state.refreshPromise
                   }
 
                   // Start a new refresh
-                  state.refreshInProgress = true;
+                  state.refreshInProgress = true
                   state.refreshPromise = executeRefresh().finally(() => {
-                        state.refreshInProgress = false;
-                        state.refreshPromise = null;
-                  });
+                        state.refreshInProgress = false
+                        state.refreshPromise = null
+                  })
 
-                  const result = await state.refreshPromise;
+                  const result = await state.refreshPromise
 
                   if (!result) {
-                        config.onAuthFailure?.();
+                        config.onAuthFailure?.()
                   }
 
-                  return result;
+                  return result
             },
 
             buildAuthHeaders: (method: HttpMethod): Record<string, string> => {
-                  const headers: Record<string, string> = {};
+                  const headers: Record<string, string> = {}
 
                   // CSRF token for non-GET requests (double-submit pattern)
-                  if (method !== "GET") {
+                  if (method !== 'GET') {
                         const csrfToken = extractCsrfToken(
                               config.csrfCookieName,
-                        );
+                        )
                         if (csrfToken) {
-                              headers[config.csrfHeaderName] = csrfToken;
+                              headers[config.csrfHeaderName] = csrfToken
                         }
                   }
 
@@ -232,29 +232,29 @@ export function createAuthCoordinator(
                   // We don't need to manually attach them.
                   // On the server, cookies are forwarded by the server fetcher.
 
-                  return headers;
+                  return headers
             },
 
             isPublicPath: (path: string): boolean => {
                   return config.publicPaths.some((publicPath) => {
                         // Exact match
-                        if (path === publicPath) return true;
+                        if (path === publicPath) return true
 
                         // Prefix match with trailing wildcard
-                        if (publicPath.endsWith("*")) {
-                              return path.startsWith(publicPath.slice(0, -1));
+                        if (publicPath.endsWith('*')) {
+                              return path.startsWith(publicPath.slice(0, -1))
                         }
 
-                        return false;
-                  });
+                        return false
+                  })
             },
 
             reset: (): void => {
-                  state.refreshInProgress = false;
-                  state.refreshPromise = null;
-                  state.consecutiveFailures = 0;
+                  state.refreshInProgress = false
+                  state.refreshPromise = null
+                  state.consecutiveFailures = 0
             },
-      };
+      }
 }
 
 /**
@@ -274,28 +274,28 @@ export function createRefreshFn(
 ): () => Promise<boolean> {
       return async (): Promise<boolean> => {
             try {
-                  const url = `${baseUrl}${config.refreshEndpoint}`;
-                  const csrfToken = extractCsrfToken(config.csrfCookieName);
+                  const url = `${baseUrl}${config.refreshEndpoint}`
+                  const csrfToken = extractCsrfToken(config.csrfCookieName)
 
                   const headers: Record<string, string> = {
-                        "Content-Type": "application/json",
-                  };
+                        'Content-Type': 'application/json',
+                  }
 
                   if (csrfToken) {
-                        headers[config.csrfHeaderName] = csrfToken;
+                        headers[config.csrfHeaderName] = csrfToken
                   }
 
                   const response = await fetch(url, {
                         method: config.refreshMethod,
                         headers,
-                        credentials: "include", // Send httpOnly cookies
-                  });
+                        credentials: 'include', // Send httpOnly cookies
+                  })
 
-                  return response.ok;
+                  return response.ok
             } catch {
-                  return false;
+                  return false
             }
-      };
+      }
 }
 
 /**
@@ -311,12 +311,12 @@ export function createRefreshFn(
  */
 export function isPublicPath(path: string, config: AuthConfig): boolean {
       return config.publicPaths.some((publicPath) => {
-            if (path === publicPath) return true;
+            if (path === publicPath) return true
             if (publicPath.endsWith('*')) {
-                  return path.startsWith(publicPath.slice(0, -1));
+                  return path.startsWith(publicPath.slice(0, -1))
             }
-            return false;
-      });
+            return false
+      })
 }
 
 export function shouldAttemptRefresh(
@@ -328,15 +328,15 @@ export function shouldAttemptRefresh(
             path === config.refreshEndpoint ||
             path.endsWith(config.refreshEndpoint)
       ) {
-            return false;
+            return false
       }
 
       // Don't refresh for public paths
       if (isPublicPath(path, config)) {
-            return false;
+            return false
       }
 
-      return true;
+      return true
 }
 
 /**
@@ -346,12 +346,12 @@ export function shouldAttemptRefresh(
 export function createAuthError(
       message: string,
       context: {
-            requestId: string;
-            correlationId: string;
-            method: HttpMethod;
-            url: string;
-            durationMs: number;
-            retryCount: number;
+            requestId: string
+            correlationId: string
+            method: HttpMethod
+            url: string
+            durationMs: number
+            retryCount: number
       },
 ): AuthError {
       return new AuthError(message, {
@@ -364,5 +364,5 @@ export function createAuthError(
             retryCount: context.retryCount,
             durationMs: context.durationMs,
             timestamp: new Date().toISOString(),
-      });
+      })
 }
