@@ -15,13 +15,16 @@ export default async function VerifyEmailPage({
       const emailParam = (await searchParams).email
       const email = typeof emailParam === 'string' ? emailParam : undefined
 
+      const tokenParam = (await searchParams).token
+      const token = typeof tokenParam === 'string' ? tokenParam : undefined
+
       return (
             <FadeIn direction="up" delay={0.04} className="w-full">
                   <AuthCard
-                        title="Check your inbox"
+                        title={token ? "Verifying Email" : "Check your inbox"}
                         className="text-center [&_h3]:text-center"
                   >
-                        <VerifyEmailContent email={email} />
+                        <VerifyEmailContent email={email} token={token} />
                   </AuthCard>
             </FadeIn>
       )
