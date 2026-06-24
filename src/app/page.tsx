@@ -1,13 +1,27 @@
-import { Button } from '@/components'
+import {
+  Navbar,
+  Hero,
+  TrustStrip,
+  FeatureGrid,
+  PlatformShowcase,
+  SecurityBanner,
+  CtaSection,
+  Footer
+} from '@/features/landing/components'
 
-export default async function Page() {
-      return (
-            <div className="max-w-full min-h-screen bg-gray-50">
-                  <h1 className="text-2xl text-rose-500 font-extrabold antialiased">
-                        Beta Payment Gateway
-                  </h1>
-
-                  <Button>Click me</Button>
-            </div>
-      )
+export default function Page() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar />
+      <main className="flex-1">
+        <Hero />
+        <TrustStrip />
+        <FeatureGrid />
+        <PlatformShowcase />
+        <SecurityBanner />
+        <CtaSection />
+      </main>
+      <Footer />
+    </div>
+  )
 }

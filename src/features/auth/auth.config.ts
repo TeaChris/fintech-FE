@@ -88,10 +88,7 @@ export function isPublicRoute(pathname: string): boolean {
  * Check if a given pathname is an auth page (sign-in, sign-up, etc.).
  * Used to redirect already-authenticated users away from auth pages.
  */
-const AUTH_PAGES: readonly string[] = [
-      '/sign-in',
-      '/sign-up',
-] as const
+const AUTH_PAGES: readonly string[] = ['/sign-in', '/sign-up'] as const
 
 export function isAuthPage(pathname: string): boolean {
       return AUTH_PAGES.some((page) => {

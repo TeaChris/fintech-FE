@@ -9,6 +9,7 @@ export {
       useAuthUser,
       useOptionalAuthUser,
 } from './components/auth-provider'
+export { Can, type CanProps } from './components/can'
 
 // Config
 export {
@@ -21,7 +22,31 @@ export {
 } from './auth.config'
 
 // Guards
-export { requireAuth, getAuthUser } from './guards/auth.guard'
+export {
+      requireAuth,
+      getAuthUser,
+      requireRole,
+      requirePermission,
+      ForbiddenError,
+} from './guards/auth.guard'
+
+// RBAC
+export {
+      ROLES,
+      PERMISSIONS,
+      ROLE_PERMISSIONS,
+      isValidRole,
+      hasRole,
+      hasAnyRole,
+      hasPermission,
+      hasAllPermissions,
+      hasAnyPermission,
+      getUserPermissions,
+} from './rbac'
+export type { Role, Permission, RbacUser } from './rbac'
+
+// Hooks
+export { usePermissions, type UsePermissionsReturn } from './hooks/use-permissions'
 
 // Types
 export type {

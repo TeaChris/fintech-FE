@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 import { AuthCard, FadeIn } from '@/features/auth'
 import { SignInForm } from '@/features/auth/components/sign-in-form'
@@ -28,7 +29,9 @@ export default function SignInPage() {
                               </p>
                         }
                   >
-                        <SignInForm />
+                        <Suspense fallback={<div className="h-40 w-full animate-pulse bg-muted rounded-md" />}>
+                              <SignInForm />
+                        </Suspense>
                   </AuthCard>
             </FadeIn>
       )

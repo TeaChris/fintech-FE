@@ -11,6 +11,7 @@
 import type { ApiClient, ApiResponse } from '@/api/types'
 import type { ZodType } from 'zod'
 import { z } from 'zod'
+import { ROLES } from '@/features/auth/rbac/rbac.constants'
 
 // ---------------------------------------------------------------------------
 // Shared Schemas
@@ -108,7 +109,9 @@ export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>
 export const AuthUserSchema = z.object({
       id: z.string().min(1),
       email: z.string().email(),
-      role: z.string(),
+      // Role must match PAY backend DEFAULT_ROLES.
+      // Using z.enum for compile-time safety.
+      role: z.enum(ROLES),
       displayName: z.string().nullable(),
       emailVerified: z.boolean(),
       mfaEnabled: z.boolean(),
