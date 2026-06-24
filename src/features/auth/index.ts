@@ -46,7 +46,10 @@ export {
 export type { Role, Permission, RbacUser } from './rbac'
 
 // Hooks
-export { usePermissions, type UsePermissionsReturn } from './hooks/use-permissions'
+export {
+      usePermissions,
+      type UsePermissionsReturn,
+} from './hooks/use-permissions'
 
 // Types
 export type {
@@ -57,3 +60,5 @@ export type {
       LogoMarkProps,
       FadeInProps,
 } from './types/auth.types'
+
+export * from './hooks'
