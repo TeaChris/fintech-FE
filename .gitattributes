@@ -1,0 +1,49 @@
+# =============================================================================
+# Git Attributes — BpaY Fintech Frontend
+# =============================================================================
+# Normalizes line endings across platforms (Windows/macOS/Linux).
+# Marks binary files to prevent diff/merge corruption.
+# Ensures lockfile merge conflicts are handled correctly.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Default: auto-detect and normalize line endings
+# ---------------------------------------------------------------------------
+* text=auto eol=lf
+
+# ---------------------------------------------------------------------------
+# Explicitly text files — ensure LF line endings
+# ---------------------------------------------------------------------------
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.json      text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sh        text eol=lf
+*.env       text eol=lf
+
+# ---------------------------------------------------------------------------
+# Binary files — do not normalize or diff
+# ---------------------------------------------------------------------------
+*.ico       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.webp      binary
+*.svg       text eol=lf
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
+
+# ---------------------------------------------------------------------------
+# Lockfile — auto-generated, do not manually merge
+# ---------------------------------------------------------------------------
+pnpm-lock.yaml    -diff merge=binary linguist-generated=true
