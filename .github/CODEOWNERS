@@ -1,0 +1,51 @@
+# =============================================================================
+# CODEOWNERS — BpaY Fintech Frontend
+# =============================================================================
+# Defines ownership for code review requirements.
+# These owners are automatically requested as reviewers on PRs.
+#
+# For a personal project, the owner is the sole maintainer.
+# As the team grows, replace @TeaChris with team handles.
+# =============================================================================
+
+# Default owner — all files
+* @TeaChris
+
+# ---------------------------------------------------------------------------
+# Critical Financial Infrastructure — API Client SDK
+# ---------------------------------------------------------------------------
+# The API client handles money-safe serialization, auth token management,
+# CSRF protection, retry logic, and idempotency. Changes here can impact
+# every financial operation in the application.
+/src/api/client/                @TeaChris
+/src/api/server/                @TeaChris
+/src/api/schemas/               @TeaChris
+/src/api/types/                 @TeaChris
+
+# ---------------------------------------------------------------------------
+# Authentication & Authorization
+# ---------------------------------------------------------------------------
+# Auth guards, RBAC, session management, MFA flows.
+# Security-critical — must be reviewed by owner.
+/src/features/auth/             @TeaChris
+
+# ---------------------------------------------------------------------------
+# Security Middleware
+# ---------------------------------------------------------------------------
+# Route protection, CSP, HSTS, security headers.
+/src/middleware.ts               @TeaChris
+
+# ---------------------------------------------------------------------------
+# CI/CD & DevOps
+# ---------------------------------------------------------------------------
+# Pipeline changes affect the entire delivery process.
+/.github/                       @TeaChris
+
+# ---------------------------------------------------------------------------
+# Build & Configuration
+# ---------------------------------------------------------------------------
+/next.config.ts                 @TeaChris
+/tsconfig.json                  @TeaChris
+/vitest.config.ts               @TeaChris
+/package.json                   @TeaChris
+/pnpm-lock.yaml                 @TeaChris
