@@ -1,0 +1,120 @@
+---
+name: "\U0001F41B Bug Report"
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - TeaChris
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Please fill out the sections below to help us investigate.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - "Critical — Authentication bypass, data loss, or security vulnerability"
+        - "High — Major feature broken, financial operations affected"
+        - "Medium — Feature partially broken, workaround available"
+        - "Low — Cosmetic issue, minor inconvenience"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which area of the application is affected?
+      options:
+        - "Authentication (sign-in, sign-up, MFA, sessions)"
+        - "Dashboard"
+        - "Transactions"
+        - "Transfers"
+        - "Accounts"
+        - "API Client SDK"
+        - "Landing Page"
+        - "CI/CD Pipeline"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide details about your environment.
+      placeholder: |
+        - Browser: Chrome 126
+        - OS: Windows 11
+        - Node.js: 22.x
+        - Environment: local / preview / production
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Recordings
+      description: If applicable, add screenshots or recordings.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console / Network Logs
+      description: Paste any relevant console errors or network logs.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: financial-impact
+    attributes:
+      label: Financial Impact
+      description: Does this bug affect financial operations?
+      options:
+        - label: This bug affects monetary transactions, balances, or financial data
+          required: false
