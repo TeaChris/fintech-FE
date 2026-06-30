@@ -1,0 +1,84 @@
+---
+name: "\U0001F6A8 Security Vulnerability"
+description: Report a security vulnerability (use GitHub private reporting for sensitive issues)
+title: "[Security]: "
+labels: ["security", "triage"]
+assignees:
+  - TeaChris
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚠️ Important
+
+        **If this is a sensitive security vulnerability, do NOT open a public issue.**
+
+        Instead, use [GitHub's private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability) or contact the maintainer directly.
+
+        This template is for **non-sensitive** security improvements and hardening requests.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Security Issue Description
+      description: Describe the security concern or improvement.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What type of security issue is this?
+      options:
+        - "Dependency vulnerability (known CVE)"
+        - "Security header misconfiguration"
+        - "Authentication / authorization concern"
+        - "CSRF / XSS / injection concern"
+        - "Secret exposure risk"
+        - "Security hardening request"
+        - "Compliance requirement"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Estimated Severity
+      description: How severe is this issue?
+      options:
+        - "Critical — Active exploitation possible"
+        - "High — Exploitable with moderate effort"
+        - "Medium — Limited impact or requires specific conditions"
+        - "Low — Defense-in-depth improvement"
+        - "Informational — Best practice recommendation"
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential Impact
+      description: What could happen if this issue is exploited or left unaddressed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Suggested Remediation
+      description: If you have a fix or mitigation in mind, describe it here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: Please confirm the following before submitting.
+      options:
+        - label: This issue does NOT contain sensitive details that could enable exploitation
+          required: true
+        - label: I have reviewed SECURITY.md for the proper disclosure process
+          required: true

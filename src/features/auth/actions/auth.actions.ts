@@ -14,6 +14,9 @@ import {
       RegisterRequestSchema,
       type RegisterRequest,
       type RegisterResponse,
+      VerifyEmailRequestSchema,
+      type VerifyEmailRequest,
+      type MessageResponse,
 } from '@/api/sdk/auth/auth.api'
 /**
  * Server Action result — discriminated union for client consumption.
@@ -191,6 +194,50 @@ export async function signUpAction(
             }
 
             // 5. Return success result
+            return { success: true, data: response.data }
+      } catch (error) {
+            // Map errors to user-friendly messages
+            if (isValidationError(error)) {
+                  return {
+                        success: false,
+                        error: error.message,
+                        fieldErrors: error.fieldErrors,
+                  }
+            }
+
+            if (isApiError(error)) {
+                  return {
+                        success: false,
+                        error: error.message,
+                  }
+            }
+
+            return {
+                  success: false,
+                  error: 'An unexpected error occurred. Please try again.',
+            }
+      }
+}
+
+/**
+ * Verify email via Server Action.
+ */
+export async function verifyEmailAction(
+      payload: VerifyEmailRequest,
+): Promise<ActionResult<MessageResponse>> {
+      try {
+            // Validate payload on the server
+            const validatedPayload = validatePayload(
+                  VerifyEmailRequestSchema,
+                  payload,
+            )
+
+            // Call backend using Server Client
+            const client = await createServerClient()
+            const authApi = createAuthApi(client)
+
+            const response = await authApi.verifyEmail(validatedPayload)
+
             return { success: true, data: response.data }
       } catch (error) {
             // Map errors to user-friendly messages

@@ -1,12 +1,12 @@
-import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { redirect } from 'next/navigation'
+
 import { signInAction } from '../actions/auth.actions'
 import { DEFAULT_AUTHENTICATED_PATH } from '../auth.config'
 import type { LoginRequest } from '@/api/sdk/auth/auth.api'
 
 export function useSignIn() {
-      const router = useRouter()
-      const searchParams = useSearchParams()
+      // const searchParams = useSearchParams()
       const [isPending, startTransition] = useTransition()
       const [error, setError] = useState<string | null>(null)
       const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>(
@@ -26,15 +26,15 @@ export function useSignIn() {
                               'mfaRequired' in result.data &&
                               result.data.mfaRequired
                         ) {
-                              router.push(
+                              redirect(
                                     `/mfa?challenge=${encodeURIComponent(result.data.mfaChallengeToken)}`,
                               )
                         } else {
                               // Redirect to the original destination or dashboard
                               const redirectTo =
-                                    searchParams.get('redirect') ??
+                                    // searchParams.get('redirect') ??
                                     DEFAULT_AUTHENTICATED_PATH
-                              router.push(redirectTo)
+                              redirect(redirectTo)
                         }
                   } else {
                         setError(result.error)
@@ -52,4 +52,3 @@ export function useSignIn() {
             fieldErrors,
       }
 }
-

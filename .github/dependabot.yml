@@ -1,0 +1,72 @@
+# =============================================================================
+# Dependabot Configuration — BpaY Fintech Frontend
+# =============================================================================
+# Automated dependency updates with weekly cadence.
+# Groups minor/patch updates to reduce PR noise.
+# Separate group for GitHub Actions to track supply chain updates.
+# =============================================================================
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------
+  # npm (pnpm) dependencies
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Africa/Lagos"
+    # Limit open PRs to avoid overwhelming the reviewer
+    open-pull-requests-limit: 10
+    # Assign PRs to the project owner
+    assignees:
+      - "TeaChris"
+    # Conventional commit messages (matches commitlint config)
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    # Group updates to reduce PR noise
+    groups:
+      # Production dependencies — review carefully
+      production-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      # Dev dependencies — lower risk, group aggressively
+      dev-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Security updates always create individual PRs (not grouped)
+    # This is the default behavior and ensures urgent fixes aren't delayed
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — supply chain security
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Africa/Lagos"
+    open-pull-requests-limit: 5
+    assignees:
+      - "TeaChris"
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

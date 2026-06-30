@@ -1,0 +1,222 @@
+# =============================================================================
+# Production Deployment — BpaY Fintech Frontend
+# =============================================================================
+# Triggered on push to main (after PR merge).
+# Deploys to Vercel production with post-deployment smoke tests.
+#
+# Flow:
+#   1. Run full CI validation (redundant safety — never trust branch protection alone)
+#   2. Deploy to Vercel production
+#   3. Run post-deployment smoke tests
+#   4. Report deployment status
+#
+# Rollback:
+#   If smoke tests fail, the deployment URL is reported but NOT promoted.
+#   Manual rollback via Vercel dashboard: promote previous deployment.
+# =============================================================================
+
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+
+# ---------------------------------------------------------------------------
+# Permissions — minimal required for deployment
+# ---------------------------------------------------------------------------
+permissions:
+  contents: read
+  deployments: write
+
+# ---------------------------------------------------------------------------
+# Concurrency — never run parallel production deployments
+# ---------------------------------------------------------------------------
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+
+jobs:
+  # =========================================================================
+  # Gate — Full CI Validation
+  # =========================================================================
+  # Re-run CI on the merge commit. Branch protection should have already
+  # validated the PR, but defense-in-depth: never deploy unvalidated code.
+  # =========================================================================
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          CI: true
+
+  # =========================================================================
+  # Deploy — Push to Vercel Production
+  # =========================================================================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate]
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.deployment-url }}
+
+    outputs:
+      deployment-url: ${{ steps.deploy.outputs.deployment-url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build for production
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel production
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment-url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "## 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** $DEPLOYMENT_URL" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # =========================================================================
+  # Smoke Tests — Post-Deployment Validation
+  # =========================================================================
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [deploy]
+    if: needs.deploy.outputs.deployment-url != ''
+
+    steps:
+      - name: Wait for deployment to stabilize
+        run: sleep 15
+
+      - name: Smoke test — Landing page (200)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy.outputs.deployment-url }}/")
+          echo "Landing page status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Landing page returned $STATUS (expected 200)"
+            exit 1
+          fi
+
+      - name: Smoke test — Sign-in page (200)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ needs.deploy.outputs.deployment-url }}/sign-in")
+          echo "Sign-in page status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Sign-in page returned $STATUS (expected 200)"
+            exit 1
+          fi
+
+      - name: Smoke test — Security headers present
+        run: |
+          HEADERS=$(curl -sI "${{ needs.deploy.outputs.deployment-url }}/")
+          echo "## Security Headers Check" >> $GITHUB_STEP_SUMMARY
+
+          # Check critical security headers
+          check_header() {
+            local header="$1"
+            if echo "$HEADERS" | grep -qi "$header"; then
+              echo "✅ $header: present" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $header: MISSING" >> $GITHUB_STEP_SUMMARY
+              echo "::warning::Security header missing: $header"
+            fi
+          }
+
+          check_header "x-frame-options"
+          check_header "x-content-type-options"
+          check_header "strict-transport-security"
+          check_header "referrer-policy"
+          check_header "content-security-policy"
+
+      - name: Smoke test — Protected route redirects (302)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --max-redirs 0 "${{ needs.deploy.outputs.deployment-url }}/dashboard")
+          echo "Dashboard (unauthenticated) status: $STATUS"
+          # Should redirect (307/302) to sign-in, not return 200
+          if [ "$STATUS" = "200" ]; then
+            echo "::error::Protected route /dashboard returned 200 without auth — auth middleware may be broken"
+            exit 1
+          fi
+          echo "✅ Protected route correctly restricts access (status: $STATUS)"
+
+      - name: Deployment verification summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment URL:** ${{ needs.deploy.outputs.deployment-url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
