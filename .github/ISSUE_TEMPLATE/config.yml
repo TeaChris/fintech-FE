@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "\U0001F4AC Discussions"
+    url: https://github.com/TeaChris/fintech-FE/discussions
+    about: Ask questions, share ideas, or discuss features
+  - name: "\U0001F4D6 Documentation"
+    url: https://github.com/TeaChris/fintech-FE/blob/main/CONTRIBUTING.md
+    about: Read the contributing guidelines
+  - name: "\U0001F512 Security Policy"
+    url: https://github.com/TeaChris/fintech-FE/blob/main/SECURITY.md
+    about: Report security vulnerabilities privately

@@ -1,0 +1,179 @@
+# =============================================================================
+# Security Audit — BpaY Fintech Frontend
+# =============================================================================
+# Runs on:
+#   1. Weekly schedule (Monday 6am UTC) — catches newly discovered vulns
+#   2. PRs that modify dependency files — catches risky additions
+#
+# Checks:
+#   - Dependency vulnerability audit (pnpm audit)
+#   - License compliance (block copyleft in production deps)
+#   - Lockfile integrity verification
+# =============================================================================
+
+name: Security Audit
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  # Allow manual trigger for incident response
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required for dependency review action on PRs
+  pull-requests: write
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+
+jobs:
+  # =========================================================================
+  # Dependency Vulnerability Audit
+  # =========================================================================
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        run: |
+          echo "## 🔒 Dependency Audit Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          pnpm audit 2>&1 | tee audit-output.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail on high/critical vulnerabilities
+        run: pnpm audit --audit-level=high
+
+  # =========================================================================
+  # Lockfile Integrity
+  # =========================================================================
+  lockfile-integrity:
+    name: Lockfile Integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Verify lockfile is up to date
+        run: |
+          # Attempt install with frozen lockfile — fails if lockfile is stale
+          pnpm install --frozen-lockfile
+          echo "✅ Lockfile is consistent with package.json" >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # License Compliance
+  # =========================================================================
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check licenses (production dependencies)
+        run: |
+          # Install license checker
+          pnpm add -g license-checker
+
+          echo "## 📋 License Compliance Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check for copyleft licenses in production deps
+          # These are incompatible with proprietary fintech software
+          FORBIDDEN="GPL;AGPL;SSPL;EUPL;OSL;CPAL;RPL;Watcom"
+
+          license-checker --production --failOn "$FORBIDDEN" --summary 2>&1 | tee license-output.txt
+
+          if [ $? -eq 0 ]; then
+            echo "✅ No copyleft licenses found in production dependencies" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Copyleft license detected in production dependencies!**" >> $GITHUB_STEP_SUMMARY
+            echo "Review \`license-output.txt\` for details." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Production License Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat license-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # =========================================================================
+  # Dependency Review (PR only)
+  # =========================================================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fail on high and critical vulnerabilities
+          fail-on-severity: high
+          # Block copyleft licenses
+          deny-licenses: GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only, SSPL-1.0
+          # Comment on PR with findings
+          comment-summary-in-pr: always

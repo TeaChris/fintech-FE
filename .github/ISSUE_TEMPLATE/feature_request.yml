@@ -1,0 +1,91 @@
+---
+name: "✨ Feature Request"
+description: Suggest a new feature or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+assignees:
+  - TeaChris
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature. Please provide as much detail as possible.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What pain point are you addressing?
+      placeholder: "As a [user type], I want [goal] so that [benefit]..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      description: Which area of the application does this relate to?
+      options:
+        - "Authentication & Security"
+        - "Dashboard & Analytics"
+        - "Transactions"
+        - "Transfers & Payments"
+        - "Accounts"
+        - "API Client SDK"
+        - "UI/UX & Design System"
+        - "Developer Experience (DX)"
+        - "CI/CD & Infrastructure"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested Priority
+      description: How important is this feature to you?
+      options:
+        - "Nice to have — improves experience"
+        - "Important — addresses a real gap"
+        - "Critical — blocks a key workflow"
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / References
+      description: If applicable, add mockups, screenshots, or links to similar features in other products.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: compliance
+    attributes:
+      label: Compliance Considerations
+      description: Check any that apply to this feature.
+      options:
+        - label: This feature handles or displays financial data
+          required: false
+        - label: This feature involves authentication or authorization changes
+          required: false
+        - label: This feature requires new environment variables or secrets
+          required: false
+        - label: This feature requires API changes (coordinate with backend)
+          required: false
