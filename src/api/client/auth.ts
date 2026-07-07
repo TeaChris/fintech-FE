@@ -236,17 +236,7 @@ export function createAuthCoordinator(
             },
 
             isPublicPath: (path: string): boolean => {
-                  return config.publicPaths.some((publicPath) => {
-                        // Exact match
-                        if (path === publicPath) return true
-
-                        // Prefix match with trailing wildcard
-                        if (publicPath.endsWith('*')) {
-                              return path.startsWith(publicPath.slice(0, -1))
-                        }
-
-                        return false
-                  })
+                  return isPublicPath(path, config)
             },
 
             reset: (): void => {
