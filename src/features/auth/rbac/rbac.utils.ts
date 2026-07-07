@@ -22,6 +22,18 @@ import {
 } from './rbac.constants'
 
 // ---------------------------------------------------------------------------
+// Pre-computed Sets
+// ---------------------------------------------------------------------------
+
+/**
+ * All permissions across all roles — pre-computed at module load.
+ * Used for the admin bypass so we don't re-create the Set on every call.
+ */
+const ALL_PERMISSIONS: ReadonlySet<Permission> = new Set(
+      Object.values(ROLE_PERMISSIONS).flat(),
+)
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -60,13 +72,9 @@ export function hasAnyRole(user: RbacUser, roles: readonly Role[]): boolean {
  * Returns an empty set for unknown roles (fail-closed).
  */
 export function getUserPermissions(user: RbacUser): ReadonlySet<Permission> {
-      // Admin bypasses — gets all permissions
+      // Admin bypasses — gets all permissions (pre-computed)
       if (user.role === 'admin') {
-            return new Set(
-                  Object.values(
-                        ROLE_PERMISSIONS,
-                  ).flat() as Permission[],
-            )
+            return ALL_PERMISSIONS
       }
 
       if (!isValidRole(user.role)) {
