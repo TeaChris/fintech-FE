@@ -52,6 +52,39 @@ async function validateOrigin(): Promise<boolean> {
 }
 
 /**
+ * Forward Set-Cookie headers from the backend response to the client.
+ * Used by auth actions (login, register) that receive session cookies.
+ */
+async function forwardResponseCookies(
+      response: { headers: Headers },
+): Promise<void> {
+      const setCookieHeaders = response.headers.getSetCookie
+            ? response.headers.getSetCookie()
+            : []
+
+      if (setCookieHeaders.length > 0) {
+            const parsedCookies = setCookieParser.parse(setCookieHeaders)
+            const cookieStore = await cookies()
+
+            for (const cookie of parsedCookies) {
+                  cookieStore.set(cookie.name, cookie.value, {
+                        path: cookie.path ?? '/',
+                        httpOnly: cookie.httpOnly ?? true,
+                        secure: cookie.secure ?? true,
+                        sameSite: cookie.sameSite as
+                              | 'lax'
+                              | 'strict'
+                              | 'none'
+                              | undefined,
+                        domain: cookie.domain,
+                        expires: cookie.expires,
+                        maxAge: cookie.maxAge,
+                  })
+            }
+      }
+}
+
+/**
  * Sign in a user via Server Action.
  *
  * This function:
@@ -86,32 +119,8 @@ export async function signInAction(
 
             const response = await authApi.login(validatedPayload)
 
-            // 4. Extract and forward cookies to the client
-            // Node 18+ Headers API provides `getSetCookie()` to cleanly extract all Set-Cookie values
-            const setCookieHeaders = response.headers.getSetCookie
-                  ? response.headers.getSetCookie()
-                  : []
-
-            if (setCookieHeaders.length > 0) {
-                  const parsedCookies = setCookieParser.parse(setCookieHeaders)
-                  const cookieStore = await cookies()
-
-                  for (const cookie of parsedCookies) {
-                        cookieStore.set(cookie.name, cookie.value, {
-                              path: cookie.path ?? '/',
-                              httpOnly: cookie.httpOnly ?? true,
-                              secure: cookie.secure ?? true,
-                              sameSite: cookie.sameSite as
-                                    | 'lax'
-                                    | 'strict'
-                                    | 'none'
-                                    | undefined,
-                              domain: cookie.domain,
-                              expires: cookie.expires,
-                              maxAge: cookie.maxAge,
-                        })
-                  }
-            }
+            // 4. Forward session cookies to the client
+            await forwardResponseCookies(response)
 
             // 5. Return success result
             return { success: true, data: response.data }
@@ -167,31 +176,8 @@ export async function signUpAction(
 
             const response = await authApi.register(validatedPayload)
 
-            // 4. Extract and forward cookies to the client (registration may auto-login and return cookies)
-            const setCookieHeaders = response.headers.getSetCookie
-                  ? response.headers.getSetCookie()
-                  : []
-
-            if (setCookieHeaders.length > 0) {
-                  const parsedCookies = setCookieParser.parse(setCookieHeaders)
-                  const cookieStore = await cookies()
-
-                  for (const cookie of parsedCookies) {
-                        cookieStore.set(cookie.name, cookie.value, {
-                              path: cookie.path ?? '/',
-                              httpOnly: cookie.httpOnly ?? true,
-                              secure: cookie.secure ?? true,
-                              sameSite: cookie.sameSite as
-                                    | 'lax'
-                                    | 'strict'
-                                    | 'none'
-                                    | undefined,
-                              domain: cookie.domain,
-                              expires: cookie.expires,
-                              maxAge: cookie.maxAge,
-                        })
-                  }
-            }
+            // 4. Forward session cookies to the client
+            await forwardResponseCookies(response)
 
             // 5. Return success result
             return { success: true, data: response.data }
@@ -226,7 +212,16 @@ export async function verifyEmailAction(
       payload: VerifyEmailRequest,
 ): Promise<ActionResult<MessageResponse>> {
       try {
-            // Validate payload on the server
+            // 1. CSRF validation
+            const originValid = await validateOrigin()
+            if (!originValid) {
+                  return {
+                        success: false,
+                        error: 'Invalid request origin. Please try again.',
+                  }
+            }
+
+            // 2. Validate payload on the server
             const validatedPayload = validatePayload(
                   VerifyEmailRequestSchema,
                   payload,
