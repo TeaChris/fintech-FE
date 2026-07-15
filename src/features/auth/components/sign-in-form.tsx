@@ -35,9 +35,9 @@ export function SignInForm() {
                   onSubmit={handleSubmit}
             >
                   {error && (
-                        <div className="flex items-center justify-center gap-3 rounded-xl bg-destructive/15 text-destructive">
+                        <div className="flex items-center justify-center gap-3 rounded-xl bg-destructive/15 p-3 text-destructive">
                               <AlertCircle className="size-5 shrink-0" />
-                              <p className="mt-4">{error}</p>
+                              <p className="text-sm">{error}</p>
                         </div>
                   )}
 
