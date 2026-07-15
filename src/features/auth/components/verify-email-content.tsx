@@ -16,7 +16,8 @@ export function VerifyEmailContent({ email, token }: { email?: string, token?: s
                   hasAttempted.current = true;
                   verifyEmail({ token });
             }
-      }, [token, verifyEmail]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- verifyEmail identity is unstable; hasAttempted ref guards re-execution
+      }, [token]);
 
       if (token) {
             if (isPending) {
@@ -66,7 +67,7 @@ export function VerifyEmailContent({ email, token }: { email?: string, token?: s
                                           size="lg"
                                           className="h-12 w-full rounded-xl bg-accent text-[0.9375rem] font-semibold text-accent-foreground transition-all hover:bg-accent/90 active:scale-[0.99]"
                                     >
-                                          <Link href="/login">
+                                          <Link href="/sign-in">
                                                 Return to Login
                                           </Link>
                                     </Button>
