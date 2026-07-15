@@ -53,9 +53,9 @@ export function SignUpForm() {
                   onSubmit={handleSubmit}
             >
                   {error && (
-                        <div className="flex items-center justify-center gap-3 rounded-xl bg-destructive/15 text-destructive">
+                        <div className="flex items-center justify-center gap-3 rounded-xl bg-destructive/15 p-3 text-destructive">
                               <AlertCircle className="size-5 shrink-0" />
-                              <p className="mt-4">{error}</p>
+                              <p className="text-sm">{error}</p>
                         </div>
                   )}
 
@@ -170,8 +170,8 @@ export function SignUpForm() {
                               )}
                               <ul className="text-xs text-muted-foreground mt-1 flex flex-col gap-1">
                                     <li className="flex items-center gap-2">
-                                          <span className="text-emerald-500">
-                                                ✓
+                                          <span className="text-muted-foreground/50">
+                                                •
                                           </span>{' '}
                                           At least 8 characters
                                     </li>
