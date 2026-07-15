@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useTransition } from 'react'
 import { verifyEmailAction } from '../actions/auth.actions'
 import type { VerifyEmailRequest } from '@/api/sdk/auth/auth.api'
