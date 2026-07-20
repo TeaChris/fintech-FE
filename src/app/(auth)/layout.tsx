@@ -1,13 +1,6 @@
 import type { Metadata } from 'next'
-import { Comfortaa } from 'next/font/google'
 
 import { AuthLayout } from '@/features/auth'
-
-const comfortaa = Comfortaa({
-      variable: '--font-comfortaa',
-      subsets: ['latin'],
-      weight: ['300', '400', '500', '600', '700'],
-})
 
 export const metadata: Metadata = {
       title: 'Authentication — BpaY',
@@ -20,9 +13,6 @@ export default function AuthRouteLayout({
 }: Readonly<{
       children: React.ReactNode
 }>) {
-      return (
-            <div className={`${comfortaa.variable}`}>
-                  <AuthLayout>{children}</AuthLayout>
-            </div>
-      )
+      return <AuthLayout>{children}</AuthLayout>
 }
+

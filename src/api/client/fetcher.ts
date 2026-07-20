@@ -31,7 +31,6 @@ import type {
 import {
       mapResponseToError,
       NetworkError,
-      // isAuthError,
 } from './errors'
 
 import {

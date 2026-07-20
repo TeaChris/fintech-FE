@@ -61,9 +61,7 @@ export function ResetPasswordForm() {
                                     </button>
                               </div>
                               <ul className="text-xs text-muted-foreground mt-1 flex flex-col gap-1">
-                                    <li className="flex items-center gap-2"><span className="text-emerald-500">✓</span> At least 12 characters</li>
-                                    <li className="flex items-center gap-2"><span className="text-emerald-500">✓</span> One number</li>
-                                    <li className="flex items-center gap-2"><span className="text-emerald-500">✓</span> One special character</li>
+                                    <li className="flex items-center gap-2"><span className="text-muted-foreground/50">•</span> At least 8 characters</li>
                               </ul>
                         </Field>
 

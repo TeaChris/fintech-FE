@@ -11,7 +11,6 @@
  */
 
 import type {
-      // ApiRequestConfig,
       PathParams,
       QueryParams,
       RequestContext,

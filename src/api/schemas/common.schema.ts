@@ -9,20 +9,29 @@
  * - Reusable building blocks for domain schemas
  */
 
-import { z } from 'zod';
+import { z } from 'zod'
 
 // ---------------------------------------------------------------------------
 // Primitives
 // ---------------------------------------------------------------------------
 
 /** UUID or opaque string ID — must be non-empty */
-export const IdSchema = z.string().min(1, 'ID must not be empty');
+export const IdSchema = z.string().min(1, 'ID must not be empty')
 
 /** ISO 8601 timestamp string */
-export const TimestampSchema = z.string().datetime({ offset: true }).or(z.string().datetime());
+export const TimestampSchema = z
+      .string()
+      .datetime({ offset: true })
+      .or(z.string().datetime())
 
 /** ISO 4217 currency code (e.g. "NGN", "USD") */
-export const CurrencyCodeSchema = z.string().length(3, 'Currency code must be 3 characters').regex(/^[A-Z]{3}$/, 'Currency code must be 3 uppercase letters (ISO 4217)');
+export const CurrencyCodeSchema = z
+      .string()
+      .length(3, 'Currency code must be 3 characters')
+      .regex(
+            /^[A-Z]{3}$/,
+            'Currency code must be 3 uppercase letters (ISO 4217)',
+      )
 
 // ---------------------------------------------------------------------------
 // Money Safety
@@ -38,15 +47,18 @@ export const CurrencyCodeSchema = z.string().length(3, 'Currency code must be 3 
  * Invalid examples: 1234.56, "abc", ""
  */
 export const MoneySchema = z.object({
-  amount: z
-    .string()
-    .min(1, 'Amount must not be empty')
-    .regex(/^-?\d+(\.\d{1,2})?$/, 'Amount must be a valid decimal string with up to 2 decimal places'),
-  currency: CurrencyCodeSchema,
-});
+      amount: z
+            .string()
+            .min(1, 'Amount must not be empty')
+            .regex(
+                  /^-?\d+(\.\d{1,2})?$/,
+                  'Amount must be a valid decimal string with up to 2 decimal places',
+            ),
+      currency: CurrencyCodeSchema,
+})
 
 /** Inferred TypeScript type for MoneySchema */
-export type Money = z.infer<typeof MoneySchema>;
+export type Money = z.infer<typeof MoneySchema>
 
 /**
  * Positive money value schema for request inputs.
@@ -55,51 +67,58 @@ export type Money = z.infer<typeof MoneySchema>;
  * in financial operations like transfers and payments.
  */
 export const PositiveMoneySchema = z.object({
-  amount: z
-    .string()
-    .min(1, 'Amount must not be empty')
-    .regex(/^\d+(\.\d{1,2})?$/, 'Amount must be a positive decimal string with up to 2 decimal places'),
-  currency: CurrencyCodeSchema,
-});
+      amount: z
+            .string()
+            .min(1, 'Amount must not be empty')
+            .regex(
+                  /^\d+(\.\d{1,2})?$/,
+                  'Amount must be a positive decimal string with up to 2 decimal places',
+            ),
+      currency: CurrencyCodeSchema,
+})
 
 /** Inferred TypeScript type for PositiveMoneySchema */
-export type PositiveMoney = z.infer<typeof PositiveMoneySchema>;
+export type PositiveMoney = z.infer<typeof PositiveMoneySchema>
 
 // ---------------------------------------------------------------------------
 // Pagination
 // ---------------------------------------------------------------------------
 
 /** Cursor-based pagination response envelope */
-export function createCursorPaginationSchema<T extends z.ZodType>(itemSchema: T) {
-  return z.object({
-    data: z.array(itemSchema),
-    cursor: z.string().nullable(),
-    hasMore: z.boolean(),
-    total: z.number().int().nonnegative().optional(),
-  });
+export function createCursorPaginationSchema<T extends z.ZodType>(
+      itemSchema: T,
+) {
+      return z.object({
+            data: z.array(itemSchema),
+            cursor: z.string().nullable(),
+            hasMore: z.boolean(),
+            total: z.number().int().nonnegative().optional(),
+      })
 }
 
 /** Offset-based pagination response envelope */
-export function createOffsetPaginationSchema<T extends z.ZodType>(itemSchema: T) {
-  return z.object({
-    data: z.array(itemSchema),
-    page: z.number().int().positive(),
-    pageSize: z.number().int().positive(),
-    totalPages: z.number().int().nonnegative(),
-    totalItems: z.number().int().nonnegative(),
-  });
+export function createOffsetPaginationSchema<T extends z.ZodType>(
+      itemSchema: T,
+) {
+      return z.object({
+            data: z.array(itemSchema),
+            page: z.number().int().positive(),
+            pageSize: z.number().int().positive(),
+            totalPages: z.number().int().nonnegative(),
+            totalItems: z.number().int().nonnegative(),
+      })
 }
 
 /** Pagination request params (for query strings) */
 export const CursorPaginationParamsSchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.number().int().positive().max(100).optional(),
-});
+      cursor: z.string().optional(),
+      limit: z.number().int().positive().max(100).optional(),
+})
 
 export const OffsetPaginationParamsSchema = z.object({
-  page: z.number().int().positive().optional(),
-  pageSize: z.number().int().positive().max(100).optional(),
-});
+      page: z.number().int().positive().optional(),
+      pageSize: z.number().int().positive().max(100).optional(),
+})
 
 // ---------------------------------------------------------------------------
 // API Error Response
@@ -107,14 +126,14 @@ export const OffsetPaginationParamsSchema = z.object({
 
 /** Standard error response from the backend */
 export const ApiErrorResponseSchema = z.object({
-  error: z.string().optional(),
-  message: z.string().optional(),
-  code: z.string().optional(),
-  details: z.record(z.string(), z.unknown()).optional(),
-  requestId: z.string().optional(),
-  retryAfter: z.number().optional(),
-  fields: z.record(z.string(), z.array(z.string())).optional(),
-});
+      error: z.string().optional(),
+      message: z.string().optional(),
+      code: z.string().optional(),
+      details: z.record(z.string(), z.unknown()).optional(),
+      requestId: z.string().optional(),
+      retryAfter: z.number().optional(),
+      fields: z.record(z.string(), z.array(z.string())).optional(),
+})
 
 // ---------------------------------------------------------------------------
 // Common Envelopes
@@ -122,27 +141,27 @@ export const ApiErrorResponseSchema = z.object({
 
 /** Single-item success response */
 export function createSuccessSchema<T extends z.ZodType>(dataSchema: T) {
-  return z.object({
-    data: dataSchema,
-    message: z.string().optional(),
-  });
+      return z.object({
+            data: dataSchema,
+            message: z.string().optional(),
+      })
 }
 
 /** List response (non-paginated) */
 export function createListSchema<T extends z.ZodType>(itemSchema: T) {
-  return z.object({
-    data: z.array(itemSchema),
-    total: z.number().int().nonnegative().optional(),
-  });
+      return z.object({
+            data: z.array(itemSchema),
+            total: z.number().int().nonnegative().optional(),
+      })
 }
 
 // ---------------------------------------------------------------------------
 // Sort & Filter
 // ---------------------------------------------------------------------------
 
-export const SortOrderSchema = z.enum(['asc', 'desc']);
+export const SortOrderSchema = z.enum(['asc', 'desc'])
 
 export const DateRangeSchema = z.object({
-  from: TimestampSchema.optional(),
-  to: TimestampSchema.optional(),
-});
+      from: TimestampSchema.optional(),
+      to: TimestampSchema.optional(),
+})
